@@ -20,12 +20,15 @@ mobile/
   package.json      # Dependencies
   ...
 
----
+2. Run the app
+   bash
+   npx expo start --tunnel
 
-## Then commit & push:
-```bash
-git add README.md
-git commit -m "docs: add mobile app instructions to README"
-git push
+Project Structure:
+mobile/
+   app/
+   assets/
+   package.json
+   ...
+   etc
 
-git add README.md
