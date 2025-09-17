@@ -29,3 +29,6 @@ mobile/
    ...
    etc
 
+
+
+********* Always run npm install after pulling new changes.**********
