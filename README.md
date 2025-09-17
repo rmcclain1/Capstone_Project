@@ -14,6 +14,7 @@ This is the template we’ll all work from.
    npm install
 
 npx expo start --tunnel
+
 mobile/
   app/              # Expo Router pages
   assets/           # Images, fonts
@@ -22,6 +23,7 @@ mobile/
 
 2. Run the app
    bash
+   
    npx expo start --tunnel
 
 Project Structure:
