@@ -15,11 +15,6 @@ This is the template we’ll all work from.
 
 npx expo start --tunnel
 
-mobile/
-  app/              # Expo Router pages
-  assets/           # Images, fonts
-  package.json      # Dependencies
-  ...
 
 2. Run the app
    bash
