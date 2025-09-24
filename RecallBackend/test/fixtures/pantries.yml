@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  item_id: 1
+  user_id: 1
+  item_name: MyString
+  expiration_date: MyString
+  bestby_date: MyString
+  manufacturer: MyString
+  lot_number: 1
+  country_of_origin: MyString
+  allergen: MyString
+  expired: false
+  category: MyString
+
+two:
+  item_id: 1
+  user_id: 1
+  item_name: MyString
+  expiration_date: MyString
+  bestby_date: MyString
+  manufacturer: MyString
+  lot_number: 1
+  country_of_origin: MyString
+  allergen: MyString
+  expired: false
+  category: MyString
