@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React from "react";
 
 const PURPLE = '#6E56CF';
 
