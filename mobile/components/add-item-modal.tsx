@@ -39,7 +39,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
         ]).start(({ finished }) => finished && onClose());
     };
 
-    // form state
     const [name, setName] = useState('');
     const [imageUri, setImageUri] = useState<string | undefined>();
     const [expiresAt, setExpiresAt] = useState(''); // MM/DD/YYYY (UI-only)
@@ -75,7 +74,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
             <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)', opacity: backdrop }]} />
             <SafeAreaView style={styles.safe}>
                 <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-                    {/* header */}
                     <View style={styles.headerRow}>
                         <TouchableOpacity onPress={resetAndClose} style={styles.roundIcon} hitSlop={12}>
                             <Ionicons name="close" size={20} color="#0F172A" />
@@ -84,7 +82,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                     </View>
 
                     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                        {/* Item Name */}
                         <Text style={styles.label}>Item Name</Text>
                         <TextInput
                             placeholder="Enter item name"
@@ -94,7 +91,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             onChangeText={setName}
                         />
 
-                        {/* Image */}
                         <View style={{ marginTop: 14 }}>
                             {imageUri ? (
                                 <Image source={{ uri: imageUri }} style={styles.image} />
@@ -106,7 +102,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Expiration Date */}
                         <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
                         <View style={styles.inputWithIcon}>
                             <TextInput
@@ -119,7 +114,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             <Ionicons name="calendar-outline" size={18} color="#6B7280" />
                         </View>
 
-                        {/* Manufacturer */}
                         <Text style={styles.label}>Manufacturer</Text>
                         <TextInput
                             placeholder="Enter manufacturer"
@@ -129,7 +123,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             onChangeText={setManufacturer}
                         />
 
-                        {/* Lot Number */}
                         <Text style={styles.label}>Lot Number</Text>
                         <TextInput
                             placeholder="Enter lot number"
@@ -139,7 +132,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             onChangeText={setLotNumber}
                         />
 
-                        {/* Country of Origin */}
                         <Text style={styles.label}>Country of Origin</Text>
                         <TouchableOpacity
                             style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
@@ -161,7 +153,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             </View>
                         )}
 
-                        {/* Allergens */}
                         <Text style={styles.label}>Allergens</Text>
                         <TextInput
                             placeholder="Enter allergens"
@@ -171,7 +162,6 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             onChangeText={setAllergens}
                         />
 
-                        {/* Footer actions */}
                         <View style={styles.footerRow}>
                             <TouchableOpacity onPress={resetAndClose} style={styles.cancelBtn}>
                                 <Text style={styles.cancelText}>Cancel</Text>
@@ -190,9 +180,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
 const styles = StyleSheet.create({
     safe: { flex: 1, justifyContent: 'flex-end' },
     sheet: {
-        flex: 1,               // nearly full-screen
-        // margin: 10,
-        // leaves a small top sliver
+        flex: 1,
         height: '92%',
 
         backgroundColor: '#FFF',

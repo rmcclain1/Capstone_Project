@@ -39,7 +39,6 @@ export default function RecallDetails() {
                 <Text style={styles.h2}>Reason for Recall</Text>
                 <Text style={styles.body}>{reason}</Text>
 
-                {/* Affected Products (key/value card) */}
                 <View style={styles.card}>
                     <Row label="Batch/Lot Numbers" value={batchLot} />
                     <Divider />

@@ -15,7 +15,6 @@ export default function ScanScreen() {
 
     return (
         <SafeAreaView style={styles.backdrop}>
-            {/* Sheet / Card */}
             <View style={styles.sheet}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -23,18 +22,13 @@ export default function ScanScreen() {
                         <Ionicons name="close" size={24} color="#1F2937" />
                     </TouchableOpacity>
                     <Text style={styles.title}>Scan Barcode</Text>
-                    {/* spacer to balance the close icon */}
                     <View style={{ width: 24 }} />
                 </View>
 
                 <Text style={styles.subtitle}>Position barcode within the frame</Text>
 
-                {/* Scanner frame (UI only) */}
-                <View style={styles.frame}>
-                    {/* Put camera preview here later */}
-                </View>
+                <View style={styles.frame}></View>
 
-                {/* Suggested item row */}
                 <View style={styles.itemRow}>
                     <Image
                         source={{ uri: 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=150&q=80' }}
@@ -89,7 +83,7 @@ const R = 20;
 const styles = StyleSheet.create({
     backdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)', // dim behind the sheet
+        backgroundColor: 'rgba(0,0,0,0.25)',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 12,
@@ -101,7 +95,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingTop: 10,
         paddingBottom: 16,
-        // soft shadow
         shadowColor: '#000',
         shadowOpacity: 0.08,
         shadowRadius: 14,
@@ -129,7 +122,7 @@ const styles = StyleSheet.create({
     frame: {
         height: 180,
         borderRadius: 14,
-        backgroundColor: '#9EB39C', // placeholder greenish preview
+        backgroundColor: '#9EB39C',
         opacity: 0.7,
         marginHorizontal: 4,
         marginBottom: 16,

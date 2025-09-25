@@ -180,7 +180,6 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
     );
 }
 
-/* ---------- small presentational helpers ---------- */
 function Label({ text }: { text: string }) {
     return <Text style={styles.label}>{text}</Text>;
 }

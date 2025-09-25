@@ -94,8 +94,6 @@ export default function ScanSheet({ visible, onClose }: Props) {
     );
 }
 
-const R = 22;
-
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
@@ -103,7 +101,7 @@ const styles = StyleSheet.create({
     },
     sheet: {
         flex: 1,
-        margin: 10,            // leave small gap at top for grabber
+        margin: 10,
         backgroundColor: '#FFFFFF',
         borderRadius: 24,
         borderTopRightRadius: 24,
