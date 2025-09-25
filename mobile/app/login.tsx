@@ -20,8 +20,7 @@ export default function Login() {
         try {
             const user = await login(username, password);
             Alert.alert('Login Successful', `Welcome, ${user.username}`);
-            // import { useRouter } from 'expo-router';
-            router.replace('/(tabs)');            // <- not '/'
+            router.replace('/(tabs)');
 
         } catch (err: any) {
             console.log('LOGIN ERROR:', err?.response?.status, err?.response?.data, err?.message);
