@@ -10,12 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_23_222245) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_25_003200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "pantries", force: :cascade do |t|
-    t.integer "item_id"
     t.integer "user_id"
     t.string "item_name"
     t.string "expiration_date"
@@ -31,15 +30,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_222245) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.integer "user_id"
     t.string "username"
     t.string "password"
     t.string "first_name"
     t.string "last_name"
     t.string "email"
     t.string "birthday"
-    t.integer "phone_number"
+    t.bigint "phone_number"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "password_digest"
   end
 end
