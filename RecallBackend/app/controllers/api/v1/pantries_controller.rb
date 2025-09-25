@@ -1,9 +1,7 @@
-# app/controllers/api/v1/pantries_controller.rb
-
 class Api::V1::PantriesController < ApplicationController
   before_action :set_pantry, only: [:show, :update, :destroy]
 
-  # GET /api/v1/pantries or /api/v1/pantries?user_id=1
+  # GET use cases of /api/v1/pantries or /api/v1/pantries?user_id=1 to select a pantry from a specific user
   def index
     if params[:user_id]
       pantries = Pantry.where(user_id: params[:user_id])
@@ -14,12 +12,10 @@ class Api::V1::PantriesController < ApplicationController
     render json: pantries
   end
 
-  # GET /api/v1/pantries/:id
   def show
     render json: @pantry
   end
 
-  # POST /api/v1/pantries
   def create
     pantry = Pantry.new(pantry_params)
 
@@ -30,7 +26,6 @@ class Api::V1::PantriesController < ApplicationController
     end
   end
 
-  # PUT /api/v1/pantries/:id
   def update
     if @pantry.update(pantry_params)
       render json: @pantry
@@ -38,8 +33,7 @@ class Api::V1::PantriesController < ApplicationController
       render json: { errors: @pantry.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
-  # DELETE /api/v1/pantries/:id
+  
   def destroy
     @pantry.destroy
     render json: { message: 'Pantry item deleted' }
