@@ -100,8 +100,8 @@ export default function RecallsScreen() {
           <Pressable style={s.row} android_ripple={{ color: '#eee' }}
             onPress={() =>
               router.push({
-                pathname: '/recalls/[id]', // create this page later if you want details
-                params: { id: item.id, title: item.title, issuer: item.issuer },
+                pathname: '/recalls/[id]',
+                params: { id: item.id, title: item.title, issuer: item.issuer, image: item.image},
               })
             }
           >
