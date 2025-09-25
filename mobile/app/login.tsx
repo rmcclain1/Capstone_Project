@@ -1,87 +1,150 @@
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+    SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TextInput,
+    StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView,
+    Alert,
 } from 'react-native';
-import { login } from '../api/auth'; 
+import {router} from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import {login} from '@/api/auth';
 
 
-export default function LoginScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+export default function Login() {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const user = await login(username, password);
-      Alert.alert('Login Successful', `Welcome, ${user.username}`);
-      router.replace('/');
-    } catch (err: any) {
-      Alert.alert('Login Failed', err.toString());
-    } finally {
-      setLoading(false);
-    }
-  };
+    const [loading, setLoading] = useState(false);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login to Your Pantry</Text>
+    const handleLogin = async () => {
+        setLoading(true);
+        try {
+            const user = await login(username, password);
+            Alert.alert('Login Successful', `Welcome, ${user.username}`);
+            // import { useRouter } from 'expo-router';
+            router.replace('/(tabs)');            // <- not '/'
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        autoCapitalize="none"
-        value={username}
-        onChangeText={setUsername}
-      />
+        } catch (err: any) {
+            console.log('LOGIN ERROR:', err?.response?.status, err?.response?.data, err?.message);
+            throw err?.response?.data?.error || err?.response?.data || err?.message || 'Login failed';
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        autoCapitalize="none"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+    return (
+        <SafeAreaView style={styles.safe}>
+            <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.select({ios: 'padding', android: undefined})}>
+                <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                    <View style={{height: 24}}/>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#6E56CF" />
-      ) : (
-        <Button title="Login" onPress={handleLogin} color="#6E56CF" />
-      )}
-    </View>
-  );
+                    <Text style={styles.appName}>Recall App</Text>
+
+                    <View style={{height: 24}}/>
+
+                    <Text style={styles.h2}>Create an account</Text>
+                    <Text style={styles.sub}>Enter your email and sign up for free</Text>
+
+                    <View style={{height: 16}}/>
+
+                    <TextInput
+                        placeholder="Username"
+                        placeholderTextColor="#9CA3AF"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        value={username}
+                        onChangeText={setUsername}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Password"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                        style={[styles.input, {marginTop: 12}]}
+                        autoFocus
+                    />
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#6E56CF"/>
+                    ) : (
+                        <TouchableOpacity style={styles.cta} onPress={handleLogin}>
+                            <Text style={styles.ctaText}>Continue</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <View style={styles.dividerRow}>
+                        <View style={styles.divider}/>
+                        <Text style={styles.or}>or</Text>
+                        <View style={styles.divider}/>
+                    </View>
+
+                    <TouchableOpacity style={styles.social} onPress={() => {}}>
+                        <Ionicons name="logo-google" size={20} color="#111827" style={{marginRight: 10}}/>
+                        <Text style={styles.socialText}>Continue with Google</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.social} disabled>
+                        <Ionicons name="logo-apple" size={22} color="#111827" style={{marginRight: 10}}/>
+                        <Text style={styles.socialText}>Continue with Apple (dev build)</Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.legal}>
+                        By clicking continue, you agree to our <Text style={styles.link}>Terms of Service</Text>{' '}
+                        and <Text style={styles.link}>Privacy Policy</Text>
+                    </Text>
+
+                    <View style={{height: 32}}/>
+                </ScrollView>
+            </KeyboardAvoidingView>
+
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    backgroundColor: '#F5F3FA',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 32,
-    textAlign: 'center',
-    color: '#1A1523',
-  },
-  input: {
-    height: 48,
-    borderColor: '#DDD',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#FFF',
-  },
+    safe: {flex: 1, backgroundColor: '#fff'},
+    container: {paddingHorizontal: 24, paddingTop: 8, alignItems: 'stretch'},
+    appName: {fontSize: 32, fontWeight: '800', textAlign: 'center', color: '#111827'},
+    h2: {fontSize: 18, fontWeight: '700', textAlign: 'center', color: '#111827'},
+    sub: {fontSize: 14, textAlign: 'center', color: '#6B7280', marginTop: 6},
+    input: {
+        borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12,
+        paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, color: '#111827', marginBottom: 12,
+    },
+    cta: {
+        backgroundColor: '#111827', borderRadius: 12, height: 48,
+        alignItems: 'center', justifyContent: 'center', marginTop: 4,
+    },
+    ctaText: {color: 'white', fontSize: 16, fontWeight: '700'},
+    dividerRow: {flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 20},
+    divider: {flex: 1, height: 1, backgroundColor: '#E5E7EB'},
+    or: {color: '#9CA3AF', fontSize: 12},
+    social: {
+        flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 12,
+        backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB',
+        paddingHorizontal: 14, marginBottom: 12,
+    },
+    socialText: {fontSize: 16, color: '#111827'},
+    legal: {textAlign: 'center', color: '#6B7280', fontSize: 12, marginTop: 8, lineHeight: 18},
+    link: {color: '#111827', fontWeight: '700', textDecorationLine: 'underline'},
+    error: {color: '#b91c1c', textAlign: 'center', marginTop: 8},
+
+    // sheet styles
+    sheet: {
+        position: 'absolute', left: 0, right: 0, bottom: 0,
+        backgroundColor: '#F8F9FB',
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        paddingBottom: 24, paddingHorizontal: 16, paddingTop: 8,
+    },
+    grabberWrap: {alignItems: 'center', paddingVertical: 6},
+    grabber: {width: 36, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB'},
+    sheetTitle: {fontSize: 18, fontWeight: '800', color: '#111827', textAlign: 'center', marginTop: 4},
+    sheetSub: {fontSize: 14, color: '#6B7280', textAlign: 'center', marginTop: 6, marginBottom: 8},
+
+    sheetCancelBtn: {
+        marginTop: 10, height: 48, borderRadius: 12,
+        backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    sheetCancelText: {color: '#111827', fontSize: 16, fontWeight: '700'},
 });
