@@ -1,7 +1,6 @@
 class CreatePantries < ActiveRecord::Migration[8.0]
   def change
     create_table :pantries do |t|
-      t.integer :item_id
       t.integer :user_id
       t.string :item_name
       t.string :expiration_date
