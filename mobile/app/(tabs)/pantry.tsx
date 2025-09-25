@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchPantryItems } from '../../api/pantry';
 import {
   View,
   Text,
