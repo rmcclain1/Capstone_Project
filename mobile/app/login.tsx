@@ -40,8 +40,8 @@ export default function Login() {
 
                     <View style={{height: 24}}/>
 
-                    <Text style={styles.h2}>Create an account</Text>
-                    <Text style={styles.sub}>Enter your email and sign up for free</Text>
+                    <Text style={styles.h2}>Welcome back</Text>
+                    <Text style={styles.sub}>Log in to continue</Text>
 
                     <View style={{height: 16}}/>
 
@@ -91,7 +91,12 @@ export default function Login() {
                         By clicking continue, you agree to our <Text style={styles.link}>Terms of Service</Text>{' '}
                         and <Text style={styles.link}>Privacy Policy</Text>
                     </Text>
-
+                    <TouchableOpacity onPress={() => router.push('/signup')} style={{ marginTop: 16 }}>
+                        <Text style={styles.signupText}>
+                            Don’t have an account? <Text style={styles.signupLink}>Sign up</Text>
+                        </Text>
+                    </TouchableOpacity>
+                    
                     <View style={{height: 32}}/>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -146,4 +151,15 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     sheetCancelText: {color: '#111827', fontSize: 16, fontWeight: '700'},
+
+    signupText: {
+        textAlign: 'center',
+        fontSize: 14,
+        color: '#6B7280', // muted gray, matches your "sub" style
+    },
+    signupLink: {
+        fontWeight: '700',
+        color: '#111827', // dark text, same as headings
+    },
+
 });
