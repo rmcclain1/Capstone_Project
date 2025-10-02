@@ -23,7 +23,7 @@ type AuthContextShape = {
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>; // handy after profile updates
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
 const AuthContext = createContext<AuthContextShape>(null as any);
@@ -59,11 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const refreshUser = useCallback(async () => {
         if (!token || !userId) return;
         const { data } = await axios.get<User>(`${API_BASE}/users/${userId}`);
-        // normalize allergies to always be an array
         setUser({ ...data, allergies: toArray((data as any).allergies) });
     }, [token, userId]);
 
-    // boot: read token + userId, then fetch user
     useEffect(() => {
         (async () => {
             try {
@@ -75,7 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     await refreshUser();
                 }
             } catch (e) {
-                // ignore
             } finally {
                 setLoading(false);
             }
@@ -85,12 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = useCallback(async (username: string, password: string) => {
         const { data } = await axios.post(`${API_BASE}/login`, { username, password });
         const { token: t, user } = data;
-        // persist token + userId
         await AsyncStorage.multiSet([[TOKEN_KEY, t], [USER_ID_KEY, String(user.id)]]);
         setToken(t);
         setUserId(String(user.id));
         axios.defaults.headers.common.Authorization = `Bearer ${t}`;
-        // fetch fresh user from backend (don’t trust login payload blindly)
+        // fetch fresh user from backend
         await refreshUser();
     }, [refreshUser]);
 

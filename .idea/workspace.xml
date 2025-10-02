@@ -4,7 +4,36 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="refactored comments" />
+    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="refactored comments">
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/Capstone_Project.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/mise.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/app/index.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/components/add-item-modal.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/components/scan-sheet.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/Gemfile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/bin/rails" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/bin/rails" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/api/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/api/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/api/profile.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/scan.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/scan.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/components/screen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/screen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -37,7 +66,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/rmcclain1/Capstone_Project.git&quot;,
-    &quot;accountId&quot;: &quot;1f321e01-e232-4b85-99c8-71b73182fa3b&quot;
+    &quot;accountId&quot;: &quot;881f0c2d-3b77-477c-a2fa-e2386331bc28&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -54,6 +83,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "khurshed",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
