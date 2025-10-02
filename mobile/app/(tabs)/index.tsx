@@ -20,6 +20,13 @@ export default function Home() {
                     />
                 </Pressable>
                 <Text style={s.headerTitle}>Home</Text>
+                <Pressable onPress={() => logout()}>
+                    {/*<Image*/}
+                    {/*    source={{uri: 'https://i.pravatar.cc/100?img=12'}}*/}
+                    {/*    style={s.avatar}*/}
+                    {/*/>*/}
+                    <Text>Logout</Text>
+                </Pressable>
                 <View style={{width: 40}}/>
             </View>
 

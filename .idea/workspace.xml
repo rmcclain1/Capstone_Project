@@ -54,7 +54,6 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -87,7 +86,7 @@
       <workItem from="1758488747812" duration="4309000" />
       <workItem from="1758771311346" duration="29284000" />
       <workItem from="1759389497143" duration="428000" />
-      <workItem from="1759389933759" duration="13134000" />
+      <workItem from="1759389933759" duration="14237000" />
     </task>
     <task id="LOCAL-00001" summary="created UI pages">
       <option name="closed" value="true" />

@@ -11,13 +11,12 @@ import {
 } from 'react-native';
 import {useAuth} from "@/app/context/auth_context";
 
-export default function Login() {
-    const router = useRouter();
-    const {login} = useAuth();
-
+export default function LoginScreen() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const {login} = useAuth();
 
     const handleLogin = async () => {
         setLoading(true);
@@ -34,6 +33,7 @@ export default function Login() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Login to Your Pantry</Text>
+
             <TextInput
                 style={styles.input}
                 placeholder="Username"
