@@ -1,31 +1,34 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {View, Text, StyleSheet, Pressable, Image} from 'react-native';
+import {useRouter} from 'expo-router';
+import React from "react";
+import {useAuth} from "@/app/context/auth_context";
 
 const PURPLE = '#6E56CF';
 
 export default function Home() {
+    const { user, logout, refreshUser } = useAuth();
 
-  const router = useRouter();
-  return (
-    <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
-      <View style={s.header}>
-      <Pressable onPress={() => router.push('/profile')}>
-  <Image
-    source={{ uri: 'https://i.pravatar.cc/100?img=12' }}
-    style={s.avatar}
-  />
-</Pressable>
-        <Text style={s.headerTitle}>Home</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    const router = useRouter();
+    return (
+        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+            <View style={s.header}>
+                <Pressable onPress={() => router.push('/profile')}>
+                    <Image
+                        source={{uri: 'https://i.pravatar.cc/100?img=12'}}
+                        style={s.avatar}
+                    />
+                </Pressable>
+                <Text style={s.headerTitle}>Home</Text>
+                <View style={{width: 40}}/>
+            </View>
 
-      <View style={s.card}>
-        <Text style={s.h1}>Welcome back, <Text style={{color:'#111'}}>Ethan</Text></Text>
-        <Text style={s.sub}>
-          Here’s a quick overview of your pantry and recent activity.
-        </Text>
-      </View>
+            <View style={s.card}>
+                <Text style={s.h1}>Welcome back, <Text style={{color: '#111'}}>{user?.first_name}</Text></Text>
+                <Text style={s.sub}>
+                    Here’s a quick overview of your pantry and recent activity.
+                </Text>
+            </View>
 
       {/* Pantry Summary */}
       <Text style={s.sectionTitle}>Pantry Summary</Text>
