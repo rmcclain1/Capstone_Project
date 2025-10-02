@@ -52,7 +52,6 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
     const [location, setLocation] = useState(initial?.location || 'San Francisco, CA');
     const [avatarUri, setAvatarUri] = useState<string | undefined>(initial?.avatarUri);
 
-    // Build a default toggle map, then overlay initial?.allergies (already a toggle map)
     const blank: ToggleMap = ALLERGY_LIST.reduce((m, k) => { m[k] = false; return m; }, {} as ToggleMap);
     const [allergies, setAllergies] = useState<ToggleMap>({ ...blank, ...(initial?.allergies ?? {}) });
 

@@ -19,7 +19,6 @@ function getBaseUrl() {
 }
 const API_BASE = getBaseUrl();
 
-/** Normalize any value to a clean string[] (handles legacy ['["..."]'] too) */
 function toArray(raw: any): string[] {
     if (Array.isArray(raw)) {
         if (raw.length === 1 && typeof raw[0] === 'string') {
@@ -92,7 +91,6 @@ function modalToAllergyArray(record: Record<string, boolean> = {}, other?: strin
     return out;
 }
 
-/* -------------------- screen -------------------- */
 
 export default function Profile() {
     const router = useRouter();
@@ -106,7 +104,6 @@ export default function Profile() {
         return fn || user?.username || '';
     }, [user]);
 
-    // ✅ Always a clean array of strings
     const allergies = useMemo(() => toArray(user?.allergies), [user]);
 
     const onRefresh = useCallback(async () => {
@@ -147,7 +144,6 @@ export default function Profile() {
 
             const { data } = await api.put(`${API_BASE}/users/${user.id}`, body);
 
-            // ✅ Normalize whatever server returns into string[]
             setUser({ ...data, allergies: toArray((data as any).allergies) });
 
             setEditOpen(false);
@@ -226,7 +222,6 @@ export default function Profile() {
                     birthday: user.birthday,
                     location: user.location,
                     avatarUri: user.avatar_url,
-                    // ✅ pass a toggle map so switches are pre-toggled
                     allergies: allergiesToToggleMap(allergies),
                     otherAllergy: firstOther(allergies),
                 }}
