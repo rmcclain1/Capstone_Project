@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_02_214401) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -45,8 +45,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_02_214401) do
   create_table "pantries", force: :cascade do |t|
     t.integer "user_id"
     t.string "item_name"
-    t.string "expiration_date"
-    t.string "bestby_date"
+    t.date "expiration_date"
+    t.date "bestby_date"
     t.string "manufacturer"
     t.integer "lot_number"
     t.string "country_of_origin"
@@ -55,6 +55,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_02_214401) do
     t.string "category"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "quantity"
+    t.string "image_url"
+    t.index ["bestby_date"], name: "index_pantries_on_bestby_date"
+    t.index ["created_at"], name: "index_pantries_on_created_at"
+    t.index ["expiration_date"], name: "index_pantries_on_expiration_date"
+    t.index ["user_id", "category"], name: "index_pantries_on_user_id_and_category"
+    t.index ["user_id", "expired"], name: "index_pantries_on_user_id_and_expired"
+    t.index ["user_id", "item_name"], name: "index_pantries_on_user_id_and_item_name"
   end
 
   create_table "users", force: :cascade do |t|
