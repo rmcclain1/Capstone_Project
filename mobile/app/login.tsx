@@ -1,30 +1,31 @@
-import React, { useState} from 'react';
+import React, {useState} from 'react';
 import {
-    SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TextInput,
-    StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView,
+    SafeAreaView, KeyboardAvoidingView, Platform,View,
+    Text,
+    TextInput,
+
+    StyleSheet,TouchableOpacity, ActivityIndicator, ScrollView,
     Alert,
+
 } from 'react-native';
-import {router} from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import {login} from '@/api/auth';
+import {useAuth} from "@/app/context/auth_context";
+import {useRouter} from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
-
-export default function Login() {
+export default function LoginScreen() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const {login} = useAuth();
 
     const handleLogin = async () => {
         setLoading(true);
         try {
-            const user = await login(username, password);
-            Alert.alert('Login Successful', `Welcome, ${user.username}`);
+            await login(username, password); // stores token+userId and fetches user
             router.replace('/(tabs)');
-
-        } catch (err: any) {
-            console.log('LOGIN ERROR:', err?.response?.status, err?.response?.data, err?.message);
-            throw err?.response?.data?.error || err?.response?.data || err?.message || 'Login failed';
+        } catch (e: any) {
+            Alert.alert('Login Failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
         } finally {
             setLoading(false);
         }

@@ -7,6 +7,8 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 
+type ToggleMap = Record<string, boolean>;
+
 type Props = {
     visible: boolean;
     onClose: () => void;
@@ -14,13 +16,15 @@ type Props = {
     initial?: {
         name?: string; username?: string; email?: string; phone?: string;
         birthday?: string; location?: string; avatarUri?: string;
-        allergies?: Record<string, boolean>; otherAllergy?: string;
+        // IMPORTANT: pass a toggle map here (we’ll build it in Profile.tsx)
+        allergies?: ToggleMap;
+        otherAllergy?: string;
     };
 };
 
 const ALLERGY_LIST = [
     'Peanuts','Tree Nuts','Shellfish','Fish','Egg','Dairy','Gluten','Soy','Other',
-];
+] as const;
 
 export default function EditProfileModal({ visible, onClose, onSave, initial }: Props) {
     const backdrop = useRef(new Animated.Value(0)).current;
@@ -47,10 +51,10 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
     const [birthday, setBirthday] = useState(initial?.birthday || '05/15/1990');
     const [location, setLocation] = useState(initial?.location || 'San Francisco, CA');
     const [avatarUri, setAvatarUri] = useState<string | undefined>(initial?.avatarUri);
-    const [allergies, setAllergies] = useState<Record<string, boolean>>({
-        ...ALLERGY_LIST.reduce((acc, k) => ({ ...acc, [k]: false }), {}),
-        ...(initial?.allergies || {}),
-    });
+
+    const blank: ToggleMap = ALLERGY_LIST.reduce((m, k) => { m[k] = false; return m; }, {} as ToggleMap);
+    const [allergies, setAllergies] = useState<ToggleMap>({ ...blank, ...(initial?.allergies ?? {}) });
+
     const [otherAllergy, setOtherAllergy] = useState(initial?.otherAllergy || '');
 
     const pickAvatar = async () => {
@@ -62,8 +66,13 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
         if (!res.canceled) setAvatarUri(res.assets[0].uri);
     };
 
-    const toggleAllergy = (key: string) =>
-        setAllergies((a) => ({ ...a, [key]: !a[key] }));
+    const toggleAllergy = (key: string) => {
+        setAllergies((a) => {
+            const next = { ...a, [key]: !a[key] };
+            if (key === 'Other' && !next['Other']) setOtherAllergy('');
+            return next;
+        });
+    };
 
     const save = () => {
         onSave?.({ name, username, email, phone, birthday, location, avatarUri, allergies, otherAllergy });
@@ -155,12 +164,13 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                                 ))}
                             </View>
 
-                            {/* Other specify */}
+                            {/* Only enable when "Other" is toggled */}
                             <Input
                                 value={otherAllergy}
                                 onChangeText={setOtherAllergy}
                                 placeholder="Please specify"
-                                style={{ marginTop: 8 }}
+                                style={{ marginTop: 8, opacity: allergies['Other'] ? 1 : 0.5 }}
+                                editable={!!allergies['Other']}
                             />
                         </ScrollView>
 

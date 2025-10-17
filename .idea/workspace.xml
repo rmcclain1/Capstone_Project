@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="Merge branch 'khurshed'&#10;&#10;# Conflicts:&#10;#&#9;mobile/api/auth.ts&#10;#&#9;mobile/app/(tabs)/index.tsx&#10;#&#9;mobile/app/(tabs)/pantry.tsx&#10;#&#9;mobile/app/login.tsx&#10;#&#9;mobile/app/profile.tsx&#10;#&#9;mobile/components/add-item-modal.tsx&#10;#&#9;mobile/components/edit-profile-modal.tsx">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002080529_add_location_to_users.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002080724_add_allergies_to_users.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002214401_create_active_storage_tables.active_storage.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014042006_change_pantry_dates_and_add_indexes.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014043220_add_quantity_to_pantries.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014043743_add_image_url_to_pantries.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/app/utils/upload.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/pantries_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/pantries_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/pantry.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/pantry.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/db/schema.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/api/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/api/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/components/add-item-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/add-item-modal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;history&quot;: [
+    {
+      &quot;state&quot;: &quot;OPEN&quot;,
+      &quot;assignee&quot;: &quot;xurshedergashboyev&quot;,
+      &quot;author&quot;: &quot;Kolpon&quot;
+    }
+  ],
+  &quot;lastFilter&quot;: {}
+}</component>
+  <component name="GitHubPullRequestState">{
+  &quot;prStates&quot;: [
+    {
+      &quot;id&quot;: {
+        &quot;id&quot;: &quot;PR_kwDOOXkLks6qZUvF&quot;,
+        &quot;number&quot;: 2
+      },
+      &quot;lastSeen&quot;: 1758771432527
+    }
+  ]
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/rmcclain1/Capstone_Project.git&quot;,
+    &quot;accountId&quot;: &quot;881f0c2d-3b77-477c-a2fa-e2386331bc28&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="331dvpdM2wUR0wJLIobKKrwJczZ" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Merging main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "ts.external.directory.path": "/Users/khurshed/WebstormProjects/Capstone_Project/mobile/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-WS-252.26199.162" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="" />
+      <created>1758488746470</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758488746470</updated>
+      <workItem from="1758488747812" duration="4309000" />
+      <workItem from="1758771311346" duration="29284000" />
+      <workItem from="1759389497143" duration="428000" />
+      <workItem from="1759389933759" duration="14237000" />
+    </task>
+    <task id="LOCAL-00001" summary="created UI pages">
+      <option name="closed" value="true" />
+      <created>1758783579500</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1758783579500</updated>
+    </task>
+    <task id="LOCAL-00002" summary="implemented login func">
+      <option name="closed" value="true" />
+      <created>1758783705526</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1758783705526</updated>
+    </task>
+    <task id="LOCAL-00003" summary="refactored comments">
+      <option name="closed" value="true" />
+      <created>1758784106946</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1758784106946</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="created UI pages" />
+    <MESSAGE value="implemented login func" />
+    <MESSAGE value="refactored comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactored comments" />
+  </component>
+</project>

@@ -44,6 +44,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
     const [expiresAt, setExpiresAt] = useState(''); // MM/DD/YYYY (UI-only)
     const [manufacturer, setManufacturer] = useState('');
     const [lotNumber, setLotNumber] = useState('');
+    const [quantity, setQuantity] = useState('');
     const [country, setCountry] = useState<string | undefined>();
     const [allergens, setAllergens] = useState('');
 
@@ -97,9 +98,16 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             ) : (
                                 <View style={[styles.image, { backgroundColor: '#E5E7EB' }]} />
                             )}
-                            <TouchableOpacity style={styles.smallBtn} onPress={pickImage}>
-                                <Text style={styles.smallBtnText}>Add Image</Text>
-                            </TouchableOpacity>
+                            {/*<TouchableOpacity style={styles} onPress={pickImage}>*/}
+                                <Text style={styles.label}>Image URL</Text>
+                                <TextInput
+                                    placeholder="https://example.com/image.jpg"
+                                    placeholderTextColor="#A3A3A3"
+                                    style={styles.input}
+                                    value={imageUri}
+                                    onChangeText={setImageUri}
+                                />
+                            {/*</TouchableOpacity>*/}
                         </View>
 
                         <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
@@ -131,7 +139,14 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             value={lotNumber}
                             onChangeText={setLotNumber}
                         />
-
+                        <Text style={styles.label}>Quantity</Text>
+                        <TextInput
+                            placeholder="Enter lot number"
+                            placeholderTextColor="#A3A3A3"
+                            style={styles.input}
+                            value={quantity}
+                            onChangeText={setQuantity}
+                        />
                         <Text style={styles.label}>Country of Origin</Text>
                         <TouchableOpacity
                             style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
