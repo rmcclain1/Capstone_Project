@@ -23,12 +23,12 @@ export default function Home() {
                 <View style={{width: 40}}/>
             </View>
 
-            <View style={s.card}>
-                <Text style={s.h1}>Welcome back, <Text style={{color: '#111'}}>{user?.first_name}</Text></Text>
-                <Text style={s.sub}>
-                    Here’s a quick overview of your pantry and recent activity.
-                </Text>
-            </View>
+      <View style={s.card}>
+        <Text style={s.h1}>Welcome back, <Text style={{color:'#111'}}>{user?.first_name}</Text></Text>
+        <Text style={s.sub}>
+          Here’s a quick overview of your pantry and recent activity.
+        </Text>
+      </View>
 
       {/* Pantry Summary */}
       <Text style={s.sectionTitle}>Pantry Summary</Text>
