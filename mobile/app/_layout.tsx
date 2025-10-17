@@ -17,7 +17,9 @@ export default function RootLayout() {
               <Stack.Screen name="ai" />
               <Stack.Screen name="manual-entry" />
               <Stack.Screen name="recall/[id]" />
-          </Stack>
+          <Stack.Screen name="signup" />
+
+    </Stack>
       </AuthProvider>
   );
 }
