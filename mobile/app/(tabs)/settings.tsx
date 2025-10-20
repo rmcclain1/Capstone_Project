@@ -7,9 +7,11 @@ import {
   Pressable,
   Switch,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from "@/app/context/auth_context";
 
 const PURPLE = '#6E56CF';
 const BG = '#F5F3FA';
@@ -18,6 +20,20 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await logout();
+      router.replace('/login');
+    } catch (e: any) {
+      Alert.alert('Logout Failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
@@ -30,10 +46,10 @@ export default function SettingsScreen() {
         <View style={{ width: 26 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
         <Text style={s.section}>Account</Text>
-        <Row label="Change Password" onPress={() => {}} />
-        <Row label="Privacy Settings" onPress={() => {}} />
+        <Row label="Change Password" onPress={() => { }} />
+        <Row label="Privacy and Security" onPress={() => { }} />
 
         <Text style={s.section}>Notifications</Text>
         <RowSwitch
@@ -49,18 +65,32 @@ export default function SettingsScreen() {
 
         {/* Preferences */}
         <Text style={s.section}>App Preferences</Text>
-        <Row label="Language" value="English" onPress={() => {}} />
-        <Row label="Theme" value="System" onPress={() => {}} />
+        <Row label="Language" value="English" onPress={() => { }} />
+        <Row label="Theme" value="System" onPress={() => { }} />
 
         {/* Help & Support */}
         <Text style={s.section}>Help & Support</Text>
-        <Row label="FAQ" onPress={() => {}} />
-        <Row label="Contact Us" onPress={() => {}} />
+        <Row label="FAQ" onPress={() => { }} />
+        <Row label="Contact Us" onPress={() => { }} />
 
         {/* About */}
         <Text style={s.section}>About</Text>
         <Row label="App Version" value="1.2.3" />
-        <Row label="Terms of Service" onPress={() => {}} />
+        <Row label="Terms of Service" onPress={() => { }} />
+
+        {/* Log Out */}
+        <View style={{ alignItems: 'center', marginTop: 24 }}>
+          <Text
+            style={{
+              color: '#d32f2f',
+              fontSize: 16,
+              fontWeight: '600',
+            }}
+            onPress={handleLogout} // assuming you already have handleLogout defined
+          >
+            Log Out
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -126,6 +156,12 @@ const s = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: '#1A1523',
+  },
+
+  redText: {
+    color: 'red', // You can use color names, hex codes, or RGB/RGBA values
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 
   row: {
