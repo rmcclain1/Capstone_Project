@@ -1,12 +1,16 @@
 import React, {useState} from 'react';
 import {
-    SafeAreaView, KeyboardAvoidingView, Platform,View,
+    SafeAreaView, 
+    KeyboardAvoidingView, 
+    Platform,
+    View,
     Text,
     TextInput,
-
-    StyleSheet,TouchableOpacity, ActivityIndicator, ScrollView,
+    StyleSheet,
+    TouchableOpacity, 
+    ActivityIndicator, 
+    ScrollView,
     Alert,
-
 } from 'react-native';
 import {useAuth} from "@/app/context/auth_context";
 import {useRouter} from "expo-router";
@@ -17,7 +21,7 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const {login} = useAuth();
+    const { login } = useAuth();
 
     const handleLogin = async () => {
         setLoading(true);
