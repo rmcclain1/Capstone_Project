@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from "@/app/context/auth_context";
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#2563EB';
 const BG = '#F5F3FA';
 
 export default function SettingsScreen() {
@@ -50,6 +50,7 @@ export default function SettingsScreen() {
         <Text style={s.section}>Account</Text>
         <Row label="Change Password" onPress={() => { }} />
         <Row label="Privacy and Security" onPress={() => { }} />
+        <Row label="Log Out" onPress={handleLogout} />
 
         <Text style={s.section}>Notifications</Text>
         <RowSwitch
@@ -78,19 +79,6 @@ export default function SettingsScreen() {
         <Row label="App Version" value="1.2.3" />
         <Row label="Terms of Service" onPress={() => { }} />
 
-        {/* Log Out */}
-        <View style={{ alignItems: 'center', marginTop: 24 }}>
-          <Text
-            style={{
-              color: '#d32f2f',
-              fontSize: 16,
-              fontWeight: '600',
-            }}
-            onPress={handleLogout} // assuming you already have handleLogout defined
-          >
-            Log Out
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -158,10 +146,10 @@ const s = StyleSheet.create({
     color: '#1A1523',
   },
 
-  redText: {
-    color: 'red', // You can use color names, hex codes, or RGB/RGBA values
+  logoutText: {
+    color: '#d32f2f',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 
   row: {
@@ -176,5 +164,5 @@ const s = StyleSheet.create({
   },
   label: { fontSize: 16, fontWeight: '600', color: '#1A1523' },
   right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  value: { fontSize: 16, color: '#6E56CF', fontWeight: '600' },
+  value: { fontSize: 16, color: '#2563EB', fontWeight: '600' },
 });

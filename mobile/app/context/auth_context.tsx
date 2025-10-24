@@ -12,7 +12,7 @@ type User = {
     phone_number?: string;
     birthday?: string;
     location?: string;
-    avatar_url?: string;
+    profile_picture_url?: string;
     allergies?: string[] | null;
 };
 
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [refreshUser]);
 
     const logout = useCallback(async () => {
-        try { await axios.delete(`${API_BASE}/logout`); } catch {}
+        try { await axios.delete(`${API_BASE}/logout`); } catch { }
         await AsyncStorage.multiRemove([TOKEN_KEY, USER_ID_KEY]);
         setToken(null);
         setUserId(null);

@@ -1,32 +1,35 @@
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {View, Text, StyleSheet, Pressable, Image} from 'react-native';
-import {useRouter} from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import React from "react";
-import {useAuth} from "@/app/context/auth_context";
+import { useAuth } from "@/app/context/auth_context";
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#2563EB';
 
 export default function Home() {
-    const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const router = useRouter();
 
-    const router = useRouter();
-    return (
-        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
-            <View style={s.header}>
-                <Pressable onPress={() => router.push('/profile')}>
-                    <Image
-                        source={{uri: 'https://i.pravatar.cc/100?img=12'}}
-                        style={s.avatar}
-                    />
-                </Pressable>
-                <Text style={s.headerTitle}>Home</Text>
-                <View style={{width: 40}}/>
-            </View>
+
+  return (
+    <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+      <View style={s.header}>
+        <Pressable onPress={() => router.push('/profile')}>
+          <Image
+            source={{ uri: user?.profile_picture_url || 'https://i.pravatar.cc/100?img=12' }}
+            style={s.avatar}
+          />
+        </Pressable>
+        <Text style={s.headerTitle}>Home</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
       <View style={s.card}>
-        <Text style={s.h1}>Welcome back, <Text style={{color:'#111'}}>{user?.first_name}</Text></Text>
+        <Text style={s.h1}>
+          Welcome back, <Text style={{ color: '#111' }}>{user?.first_name}</Text>!
+        </Text>
         <Text style={s.sub}>
-          Here’s a quick overview of your pantry and recent activity.
+          Pantry summary and recent activity.
         </Text>
       </View>
 
@@ -48,7 +51,6 @@ export default function Home() {
 
       {/* Recent Activity */}
       <Text style={[s.sectionTitle, { marginTop: 18 }]}>Recent Activity</Text>
-
       <ActivityItem icon="＋" title="Today" subtitle="Added 3 items" />
       <ActivityItem icon="—" title="Yesterday" subtitle="Used 2 items" />
 
@@ -66,7 +68,7 @@ function SummaryTile({
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.tileTitle}>{title}</Text>
-        <Pressable onPress={() => {}}>
+        <Pressable onPress={() => { }}>
           <Text style={s.tileLink}>{subtitle}</Text>
         </Pressable>
       </View>
@@ -176,5 +178,5 @@ const s = StyleSheet.create({
   },
   activityIcon: { fontSize: 20, color: '#333' },
   activityTitle: { fontSize: 18, fontWeight: '800', color: '#1A1523' },
-  activitySub: { marginTop: 2, color: '#8A63D2', fontWeight: '700' },
+  activitySub: { marginTop: 2, color: '#2563EB', fontWeight: '700' },
 });

@@ -1,11 +1,22 @@
 import React, { useRef, useState } from 'react';
 import {
-    Modal, Animated, Easing, SafeAreaView, KeyboardAvoidingView,
-    Platform, View, Text, StyleSheet, TouchableOpacity, Image,
-    ScrollView, TextInput, Switch
+    Modal,
+    Animated,
+    Easing,
+    SafeAreaView,
+    KeyboardAvoidingView,
+    Platform,
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    Image,
+    ScrollView,
+    TextInput,
+    Switch
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '@/app/context/auth_context';
 
 type ToggleMap = Record<string, boolean>;
 
@@ -14,19 +25,24 @@ type Props = {
     onClose: () => void;
     onSave?: (p: any) => void;
     initial?: {
-        name?: string; username?: string; email?: string; phone?: string;
-        birthday?: string; location?: string; avatarUri?: string;
-        // IMPORTANT: pass a toggle map here (we’ll build it in Profile.tsx)
-        allergies?: ToggleMap;
+        name?: string;
+        username?: string;
+        email?: string;
+        phone?: string;
+        birthday?: string;
+        location?: string;
+        profile_picture_url?: string;
         otherAllergy?: string;
+        allergies?: ToggleMap;
     };
 };
 
 const ALLERGY_LIST = [
-    'Peanuts','Tree Nuts','Shellfish','Fish','Egg','Dairy','Gluten','Soy','Other',
+    'Peanuts', 'Tree Nuts', 'Shellfish', 'Fish', 'Egg', 'Dairy', 'Gluten', 'Soy', 'Other',
 ] as const;
 
 export default function EditProfileModal({ visible, onClose, onSave, initial }: Props) {
+    const { user } = useAuth();
     const backdrop = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(40)).current;
 
@@ -43,28 +59,17 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
         ]).start(({ finished }) => finished && onClose());
     };
 
-    // form state
-    const [name, setName] = useState(initial?.name || 'Jane Doe');
-    const [username, setUsername] = useState(initial?.username || 'janedoe');
-    const [email, setEmail] = useState(initial?.email || 'jane.doe@example.com');
-    const [phone, setPhone] = useState(initial?.phone || '+1 (555) 123-4567');
-    const [birthday, setBirthday] = useState(initial?.birthday || '05/15/1990');
-    const [location, setLocation] = useState(initial?.location || 'San Francisco, CA');
-    const [avatarUri, setAvatarUri] = useState<string | undefined>(initial?.avatarUri);
-
+    const [name, setName] = useState(initial?.name || '');
+    const [username, setUsername] = useState(initial?.username || '');
+    const [email, setEmail] = useState(initial?.email || '');
+    const [phone, setPhone] = useState(initial?.phone || '');
+    const [birthday, setBirthday] = useState(initial?.birthday || '');
+    const [location, setLocation] = useState(initial?.location || '');
+    const [imageUri, setImageUri] = useState<string | undefined>();
+    const [avatarUri, setAvatarUri] = useState<string | undefined>(initial?.profile_picture_url);
+    const [otherAllergy, setOtherAllergy] = useState(initial?.otherAllergy || '');
     const blank: ToggleMap = ALLERGY_LIST.reduce((m, k) => { m[k] = false; return m; }, {} as ToggleMap);
     const [allergies, setAllergies] = useState<ToggleMap>({ ...blank, ...(initial?.allergies ?? {}) });
-
-    const [otherAllergy, setOtherAllergy] = useState(initial?.otherAllergy || '');
-
-    const pickAvatar = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') return;
-        const res = await ImagePicker.launchImageLibraryAsync({
-            allowsEditing: true, aspect: [1,1], quality: 0.8
-        });
-        if (!res.canceled) setAvatarUri(res.assets[0].uri);
-    };
 
     const toggleAllergy = (key: string) => {
         setAllergies((a) => {
@@ -75,7 +80,7 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
     };
 
     const save = () => {
-        onSave?.({ name, username, email, phone, birthday, location, avatarUri, allergies, otherAllergy });
+        onSave?.({ name, username, email, phone, birthday, location, avatarUri, imageUri, allergies, otherAllergy });
         runClose();
     };
 
@@ -95,7 +100,6 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                             <Text style={styles.title}>Edit Profile</Text>
                             <View style={{ width: 36 }} />
                         </View>
-
                         {/* Scrollable content */}
                         <ScrollView
                             style={{ flex: 1 }}
@@ -106,34 +110,40 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                             {/* Avatar */}
                             <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 10 }}>
                                 <View style={styles.avatarWrap}>
-                                    {avatarUri ? (
-                                        <Image source={{ uri: avatarUri }} style={styles.avatar} />
+                                    {user?.profile_picture_url ? (
+                                        <Image
+                                            source={{ uri: user.profile_picture_url }}
+                                            style={styles.avatar}
+                                        />
                                     ) : (
-                                        <View style={[styles.avatar, { backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
-                                            <Ionicons name="person" size={38} color="#9CA3AF" />
+                                        <View
+                                            style={[
+                                                styles.avatar,
+                                                {
+                                                    backgroundColor: '#E5E7EB',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }
+                                            ]}
+                                        >
+                                            <Ionicons name="person" size={38} color="#9097a3ff" />
                                         </View>
                                     )}
-                                    <TouchableOpacity style={styles.editBadge} onPress={pickAvatar}>
-                                        <Ionicons name="create-outline" size={16} color="#FFF" />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Fields */}
+                            <Text style={styles.section}>Personal Information</Text>
+                            <Label text="Profile Picture" />
+                            <Input value={imageUri} onChangeText={setImageUri} placeholder="https://example.com/image.jpg" />
                             <Label text="Name" />
                             <Input value={name} onChangeText={setName} placeholder="Your name" />
-
                             <Label text="Username" />
-                            <Input value={username} onChangeText={setUsername} autoCapitalize="none" />
-
-                            <Text style={styles.section}>Personal Information</Text>
-
+                            <Input value={username} onChangeText={setUsername} autoCapitalize="None" />
                             <Label text="E-mail Address" />
                             <Input value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-
                             <Label text="Phone Number" />
                             <Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-
                             <Label text="Birthday" />
                             <View style={styles.inputWithIcon}>
                                 <TextInput
@@ -145,10 +155,8 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                                 />
                                 <Ionicons name="calendar-outline" size={18} color="#6B7280" />
                             </View>
-
                             <Label text="Location" />
                             <Input value={location} onChangeText={setLocation} />
-
                             <Text style={styles.section}>Food Allergies</Text>
                             <View style={{ gap: 10 }}>
                                 {ALLERGY_LIST.map((k) => (
@@ -157,7 +165,7 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                                             value={!!allergies[k]}
                                             onValueChange={() => toggleAllergy(k)}
                                             trackColor={{ false: '#E5E7EB', true: '#DDD6FE' }}
-                                            thumbColor={allergies[k] ? '#6E56CF' : '#F9FAFB'}
+                                            thumbColor={allergies[k] ? '#2563EB' : '#F9FAFB'}
                                         />
                                         <Text style={styles.checkLabel}>{k}</Text>
                                     </View>
@@ -193,6 +201,7 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
 function Label({ text }: { text: string }) {
     return <Text style={styles.label}>{text}</Text>;
 }
+
 function Input(props: any) {
     return <TextInput {...props} placeholderTextColor="#A3A3A3" style={[styles.input, props.style]} />;
 }
@@ -251,7 +260,7 @@ const styles = StyleSheet.create({
     },
     cancelText: { color: '#111827', fontWeight: '700' },
     saveBtn: {
-        flex: 1, height: 48, borderRadius: 12, backgroundColor: '#6E56CF',
+        flex: 1, height: 48, borderRadius: 12, backgroundColor: '#2563EB',
         alignItems: 'center', justifyContent: 'center',
     },
     saveText: { color: '#FFF', fontWeight: '800' },
