@@ -19,7 +19,7 @@ import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import { useAuth } from '@/app/context/auth_context';
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#2362ffff';
 const BG = '#F5F3FA';
 
 type ApiPantry = {
@@ -261,12 +261,12 @@ export default function PantryScreen() {
             </View>
 
             <View style={s.searchWrap}>
-                <Ionicons name="search" size={18} color="#7A6A9A" style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={18} color="#5F5F5F" style={{ marginRight: 8 }} />
                 <TextInput
                     value={q}
                     onChangeText={setQ}
                     placeholder="Search pantry"
-                    placeholderTextColor="#9A8FBF"
+                    placeholderTextColor="#5F5F5F"
                     style={s.searchInput}
                     returnKeyType="search"
                 />
@@ -309,6 +309,7 @@ export default function PantryScreen() {
                             </Text>
                         </View>
                     }
+                    
                     renderItem={({ item }) => (
                         <View style={s.row}>
                             <Image
@@ -359,7 +360,7 @@ const s = StyleSheet.create({
         margin: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EEE9F7',
+        backgroundColor: '#e9e9f5ff',
         paddingHorizontal: 12,
         height: 44,
         borderRadius: 12,
@@ -373,13 +374,13 @@ const s = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     tabBtn: { alignItems: 'center', paddingVertical: 8, flex: 1 },
-    tabText: { fontSize: 15, color: '#7A6A9A' },
+    tabText: { fontSize: 15, color: '#5F5F5F' },
     tabIndicator: {
         marginTop: 4,
         width: 20,
         height: 3,
         borderRadius: 2,
-        backgroundColor: PURPLE,
+        backgroundColor: '#2362ffff',
     },
 
     row: {
@@ -397,5 +398,5 @@ const s = StyleSheet.create({
     },
     thumb: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#EEE' },
     name: { fontSize: 16, fontWeight: '700', color: '#1A1523' },
-    sub: { fontSize: 13, color: '#7A6A9A', marginTop: 2 },
+    sub: { fontSize: 13, color: '#5F5F5F', marginTop: 2 },
 });

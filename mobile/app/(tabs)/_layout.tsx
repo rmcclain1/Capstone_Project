@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from "react";
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#2362ffff';
 
 export default function Layout() {
   return (
