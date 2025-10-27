@@ -4,7 +4,6 @@ import {
     SafeAreaView, ScrollView, TextInput, Image, Platform
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
 
 type Props = {
     visible: boolean;
@@ -40,6 +39,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
     };
 
     const [name, setName] = useState('');
+
     const [imageUri, setImageUri] = useState<string | undefined>();
     const [expiresAt, setExpiresAt] = useState(''); // MM/DD/YYYY (UI-only)
     const [manufacturer, setManufacturer] = useState('');
@@ -47,17 +47,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
     const [quantity, setQuantity] = useState('');
     const [country, setCountry] = useState<string | undefined>();
     const [allergens, setAllergens] = useState('');
-
     const [countryOpen, setCountryOpen] = useState(false);
-
-    const pickImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') return;
-        const res = await ImagePicker.launchImageLibraryAsync({
-            allowsEditing: true, quality: 0.8, mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        });
-        if (!res.canceled) setImageUri(res.assets[0].uri);
-    };
 
     const submit = () => {
         onSubmit?.({ name, imageUri, expiresAt, manufacturer, lotNumber, country, allergens });
@@ -91,25 +81,23 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             value={name}
                             onChangeText={setName}
                         />
-
                         <View style={{ marginTop: 14 }}>
                             {imageUri ? (
                                 <Image source={{ uri: imageUri }} style={styles.image} />
                             ) : (
                                 <View style={[styles.image, { backgroundColor: '#E5E7EB' }]} />
                             )}
-                            {/*<TouchableOpacity style={styles} onPress={pickImage}>*/}
-                                <Text style={styles.label}>Image URL</Text>
-                                <TextInput
-                                    placeholder="https://example.com/image.jpg"
-                                    placeholderTextColor="#A3A3A3"
-                                    style={styles.input}
-                                    value={imageUri}
-                                    onChangeText={setImageUri}
-                                />
-                            {/*</TouchableOpacity>*/}
-                        </View>
+                            <Text style={styles.label}>Image URL</Text>
+                            <TextInput
+                                placeholder="https://example.com/image.jpg"
+                                placeholderTextColor="#A3A3A3"
+                                style={styles.input}
 
+
+                                value={imageUri}
+                                onChangeText={setImageUri}
+                            />
+                        </View>
                         <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
                         <View style={styles.inputWithIcon}>
                             <TextInput
@@ -139,6 +127,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             value={lotNumber}
                             onChangeText={setLotNumber}
                         />
+
                         <Text style={styles.label}>Quantity</Text>
                         <TextInput
                             placeholder="Enter lot number"
@@ -147,6 +136,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
                             value={quantity}
                             onChangeText={setQuantity}
                         />
+
                         <Text style={styles.label}>Country of Origin</Text>
                         <TouchableOpacity
                             style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
