@@ -9,7 +9,7 @@ import axios from 'axios';
 import EditProfileModal from '@/components/edit-profile-modal';
 import { useAuth } from '@/app/context/auth_context';
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#000000ff';
 
 /* -------------------- helpers -------------------- */
 
@@ -27,7 +27,7 @@ function toArray(raw: any): string[] {
                 try {
                     const parsed = JSON.parse(t);
                     if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-                } catch {}
+                } catch { }
             }
         }
         return raw.filter(x => typeof x === 'string');
@@ -38,7 +38,7 @@ function toArray(raw: any): string[] {
             try {
                 const parsed = JSON.parse(t);
                 if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-            } catch {}
+            } catch { }
         }
         return [t];
     }
@@ -62,13 +62,13 @@ function toISODateMaybe(val?: string) {
     return `${YYYY}-${MM.padStart(2, '0')}-${DD.padStart(2, '0')}`;
 }
 
-const FIXED_ALLERGIES = ['Peanuts','Tree Nuts','Shellfish','Fish','Egg','Dairy','Gluten','Soy'] as const;
+const FIXED_ALLERGIES = ['Peanuts', 'Tree Nuts', 'Shellfish', 'Fish', 'Egg', 'Dairy', 'Gluten', 'Soy'] as const;
 
 /** string[] -> toggle map for modal */
 function allergiesToToggleMap(allergies: string[]) {
     const rec: Record<string, boolean> = {
-        Peanuts:false, 'Tree Nuts':false, Shellfish:false, Fish:false,
-        Egg:false, Dairy:false, Gluten:false, Soy:false, Other:false,
+        Peanuts: false, 'Tree Nuts': false, Shellfish: false, Fish: false,
+        Egg: false, Dairy: false, Gluten: false, Soy: false, Other: false,
     };
     for (const a of allergies) {
         if (a in rec) rec[a] = true;
@@ -131,7 +131,7 @@ export default function Profile() {
                     phone_number: payload.phone,
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
-                    avatar_url: payload.avatarUri,
+                    profile_picture_url: payload.imageUri,
                     // ✅ convert toggle map (+ other) to a clean string[]
                     allergies: modalToAllergyArray(payload.allergies, payload.otherAllergy),
                 },
@@ -185,12 +185,11 @@ export default function Profile() {
             >
                 <View style={s.center}>
                     <Image
-                        source={{ uri: user.avatar_url || 'https://i.pravatar.cc/100?img=12' }}
+                        source={{ uri: user.profile_picture_url || 'https://i.pravatar.cc/100?img=12' }}
                         style={s.avatar}
                     />
                     <Text style={s.name}>{fullName}</Text>
                     <Text style={s.username}>@{user.username}</Text>
-
                     <Pressable onPress={() => setEditOpen(true)} style={s.editBtn}>
                         <Text style={s.editBtnText}>{saving ? 'Saving...' : 'Edit Profile'}</Text>
                     </Pressable>
@@ -221,7 +220,7 @@ export default function Profile() {
                     phone: user.phone_number,
                     birthday: user.birthday,
                     location: user.location,
-                    avatarUri: user.avatar_url,
+                    profile_picture_url: user.profile_picture_url,
                     allergies: allergiesToToggleMap(allergies),
                     otherAllergy: firstOther(allergies),
                 }}
@@ -258,7 +257,7 @@ const s = StyleSheet.create({
     username: { marginTop: 4, fontSize: 16, color: PURPLE },
 
     editBtn: {
-        marginTop: 16, backgroundColor: '#F3F0FF',
+        marginTop: 16, backgroundColor: '#eeeef3ff',
         paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10,
     },
     editBtnText: { color: '#111', fontWeight: '600' },

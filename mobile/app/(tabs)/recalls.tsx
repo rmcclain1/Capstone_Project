@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const PURPLE = '#6E56CF';
+const PURPLE = '#2362ffff';
 const BG = '#F5F3FA';
 
 type Recall = {
@@ -78,12 +78,12 @@ export default function RecallsScreen() {
       </View>
 
       <View style={s.searchWrap}>
-        <Ionicons name="search" size={18} color="#7A6A9A" style={{ marginRight: 8 }} />
+        <Ionicons name="search" size={18} color="#5F5F5F" style={{ marginRight: 8 }} />
         <TextInput
           value={q}
           onChangeText={setQ}
           placeholder="Search Recalls"
-          placeholderTextColor="#9A8FBF"
+          placeholderTextColor="#5F5F5F"
           style={s.searchInput}
           returnKeyType="search"
           clearButtonMode="while-editing"
@@ -135,7 +135,7 @@ const s = StyleSheet.create({
     marginTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEE9F7',
+    backgroundColor: '#e9e9f5ff',
     paddingHorizontal: 12,
     height: 44,
     borderRadius: 12,

@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -13,7 +11,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const PURPLE = '#6E56CF';
 const BG = '#F5F3FA';
 
 type Notif = {
@@ -157,7 +154,7 @@ const s = StyleSheet.create({
   time: {
     marginTop: 4,
     fontSize: 14,
-    color: PURPLE,
+    color: '#2362ffff',
     fontWeight: '600',
   },
 });
