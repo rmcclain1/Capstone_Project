@@ -5,6 +5,8 @@ Rails.application.routes.draw do
       resources :users, only: [:index, :show, :create, :update, :destroy]
       resources :pantries, only: [:index, :show, :create, :update, :destroy]
 
+      resources :food_events, only: [:index, :show]
+
       # Login and Logout routes
       post '/login', to: 'sessions#create'
       delete '/logout', to: 'sessions#destroy' # Optional

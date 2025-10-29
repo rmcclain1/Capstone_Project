@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useMemo, useState, useEffect } from 'react';
+import { SafeAreaView, } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   TextInput,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ type Recall = {
   issuer: 'FDA' | 'USDA' | string;
   image: string;
 };
+
 
 const DATA: Recall[] = [
   {
@@ -56,23 +58,46 @@ const DATA: Recall[] = [
 export default function RecallsScreen() {
   const router = useRouter();
   const [q, setQ] = useState('');
+  const [recalls, setRecalls] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRecalls() {
+      try {
+        const res = await fetch('http://localhost:3000/api/v1/food_events');
+        const data = await res.json();
+        setRecalls(data);
+      } catch (error) {
+        console.error('Error fetching recalls:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRecalls();
+  }, []);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return DATA;
-    return DATA.filter(
+    if (!term) return recalls;
+    return recalls.filter(
       r =>
-        r.title.toLowerCase().includes(term) ||
-        r.issuer.toLowerCase().includes(term),
+        r.product_description?.toLowerCase().includes(term) ||
+        r.recalling_firm?.toLowerCase().includes(term)
     );
-  }, [q]);
+  }, [q, recalls]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={PURPLE} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
       <View style={s.header}>
-        <Pressable hitSlop={12} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={26} color="#1A1523" />
-        </Pressable>
         <Text style={s.headerTitle}>Recalls</Text>
         <View style={{ width: 26 }} />
       </View>
@@ -92,23 +117,41 @@ export default function RecallsScreen() {
 
       <FlatList
         data={results}
-        keyExtractor={it => it.id}
+        keyExtractor={it => it.id.toString()}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
         ListHeaderComponent={<Text style={s.section}>Recent Recalls</Text>}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         renderItem={({ item }) => (
-          <Pressable style={s.row} android_ripple={{ color: '#eee' }}
+          <Pressable
+            style={s.row}
+            android_ripple={{ color: '#eee' }}
             onPress={() =>
               router.push({
                 pathname: '/recalls/[id]',
-                params: { id: item.id, title: item.title, issuer: item.issuer, image: item.image},
+                params: {
+                  id: item.id,
+                  title: item.product_description,
+                  image: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=200&q=80', // optional placeholder
+                  reason: item.reason_for_recall,
+                  manufacturer: item.recalling_firm,
+                  authority: item.product_type,
+                  affectedDates: item.report_date,
+                },
               })
             }
           >
-            <Image source={{ uri: item.image }} style={s.thumb} />
+            <Image
+              source={{
+                uri:
+                  'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=200&q=80',
+              }}
+              style={s.thumb}
+            />
             <View style={{ flex: 1 }}>
-              <Text style={s.title} numberOfLines={1}>{item.title}</Text>
-              <Text style={s.issuer}>Issued by {item.issuer}</Text>
+              <Text style={s.title} numberOfLines={1}>
+                {item.product_description}
+              </Text>
+              <Text style={s.issuer}>Issued by {item.recalling_firm}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#B8AEE0" />
           </Pressable>

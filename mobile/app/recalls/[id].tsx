@@ -1,62 +1,95 @@
-import React from 'react';
-import {View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function RecallDetails() {
-    const params = useLocalSearchParams() as any;
+  const params = useLocalSearchParams() as any;
 
-    const {
-        productName = params.title,
-        image = params.image,
-        reason = 'Reason not provided.',
-        batchLot = '—',
-        affectedDates = '—',
-        upc = '—',
-        manufacturer = '—',
-        authority = '—',
-        actions = 'Follow official instructions from the issuing authority.',
-    } = params;
+  const [recall, setRecall] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    async function fetchRecall() {
+      try {
+        const res = await fetch(`http://localhost:3000/api/v1/food_events/${params.id}`);
+        const data = await res.json();
+        setRecall(data);
+      } catch (error) {
+        console.error('Error fetching recall details:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRecall();
+  }, [params.id]);
+
+  if (loading) {
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
-            {/* Top bar */}
-            <View style={styles.topBar}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-                    <Ionicons name="chevron-back" size={22} color="#111827" />
-                </TouchableOpacity>
-                <Text style={styles.topTitle}>Recall Details</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
-                <Text style={styles.product}>{productName}</Text>
-
-                {/* Image */}
-                <Image source={{ uri: image as string }} style={styles.hero} />
-
-                {/* Reason */}
-                <Text style={styles.h2}>Reason for Recall</Text>
-                <Text style={styles.body}>{reason}</Text>
-
-                <View style={styles.card}>
-                    <Row label="Batch/Lot Numbers" value={batchLot} />
-                    <Divider />
-                    <Row label="Affected Dates" value={affectedDates} />
-                    <Divider />
-                    <Row label="UPC/Barcode" value={upc} />
-                    <Divider />
-                    <Row label="Manufacturer" value={manufacturer} />
-                    <Divider />
-                    <Row label="Issuing Authority" value={authority} />
-                </View>
-
-                {/* What to Do */}
-                <Text style={[styles.h2, { marginTop: 14 }]}>What to Do</Text>
-                <Text style={styles.body}>{actions}</Text>
-            </ScrollView>
-        </SafeAreaView>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#2362ff" />
+      </SafeAreaView>
     );
+  }
+
+  if (!recall) {
+    return (
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Recall not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // get the fields
+  const {
+    product_description,
+    recalling_firm,
+    reason_for_recall,
+    code_info,
+    report_date,
+    classification,
+    product_type,
+  } = recall;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <Ionicons name="chevron-back" size={22} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.topTitle}>Recall Details</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
+        <Text style={styles.product}>{product_description}</Text>
+
+        <Image
+          source={{
+            uri: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=400&q=80',
+          }}
+          style={styles.hero}
+        />
+
+        <Text style={styles.h2}>Reason for Recall</Text>
+        <Text style={styles.body}>{reason_for_recall || 'Not provided.'}</Text>
+
+        <View style={styles.card}>
+          <Row label="Manufacturer" value={recalling_firm || '—'} />
+          <Divider />
+          <Row label="Product Type" value={product_type || '—'} />
+          <Divider />
+          <Row label="Classification" value={classification || '—'} />
+          <Divider />
+          <Row label="Report Date" value={report_date || '—'} />
+          <Divider />
+          <Row label="Code Info" value={code_info || '—'} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 function Row({ label, value }: { label: string; value: string }) {

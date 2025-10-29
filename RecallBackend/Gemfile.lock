@@ -257,6 +257,8 @@ GEM
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
     rubyzip (2.4.1)
+    rufus-scheduler (3.9.2)
+      fugit (~> 1.1, >= 1.11.1)
     securerandom (0.4.1)
     solid_cable (3.0.12)
       actioncable (>= 7.2)
@@ -321,6 +323,7 @@ DEPENDENCIES
   rails (~> 8.0.3)
   rubocop-rails-omakase
   rubyzip (~> 2.3)
+  rufus-scheduler
   solid_cable
   solid_cache
   solid_queue
