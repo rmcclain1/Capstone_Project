@@ -27,6 +27,85 @@ export const Colors = {
   },
 };
 
+export type ThemeName = 'light' | 'dark';
+export type Tokens = {
+    name: ThemeName;
+    bg: string;          // app background
+    surface: string;     // lifted surfaces (cards, sheets)
+    card: string;        // legacy alias for surface (kept for compat)
+    text: string;        // primary text
+    onBg: string;        // high-contrast text/icons on bg
+    textDim: string;     // secondary text
+    iconDim: string;     // muted icon color
+    border: string;      // hairline borders
+
+    primary: string;     // brand color
+    primarySoft: string; // soft/tinted bg using primary (chips, subtle buttons)
+    success: string;
+    warn: string;
+    danger: string;
+
+    inputBg: string;     // input backgrounds
+    tint: string;        // generic subtle tint
+    muted: string;       // placeholders / hints
+    overlay: string;     // modal backdrops
+    shadow: string;      // iOS shadow color
+};
+
+export const light: Tokens = {
+    name: 'light',
+    bg: '#FFF',
+    surface: '#F2F2F2',
+    card: '#FFFFFF',
+    text: '#111111',
+    onBg: '#111111',
+    textDim: '#5F5F5F',
+    iconDim: '#9AA3AF',
+    border: '#E7E7EE',
+
+    // Brand / states
+    primary: '#2563EB',
+    primarySoft: '#E8F0FE',
+    success: '#16A34A',
+    warn: '#D97706',
+    danger: '#EF4444',
+
+    // Inputs & utility
+    inputBg: '#F3F4F6',
+    tint: '#E8F0FE',
+    muted: '#9AA3AF',
+    overlay: 'rgba(0,0,0,0.35)',
+    shadow: 'rgba(0,0,0,0.08)',
+};
+
+export const dark: Tokens = {
+    name: 'dark',
+    bg: '#0B0B0F',
+    surface: '#15151C',
+    card: '#15151C',
+    text: '#EDEDED',
+    onBg: '#EDEDED',
+    textDim: '#A3A3A3',
+    iconDim: '#9BA1A6',
+    border: '#262637',
+
+    // Brand / states
+    primary: '#60A5FA',
+    primarySoft: '#142030',
+    success: '#22C55E',
+    warn: '#FBBF24',
+    danger: '#F87171',
+
+    // Inputs & utility
+    inputBg: '#1E1E26',
+    tint: '#142030',
+    muted: '#9BA1A6',
+    overlay: 'rgba(0,0,0,0.50)',
+    shadow: 'rgba(0,0,0,0.50)',
+};
+
+
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

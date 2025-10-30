@@ -42,6 +42,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "food_events", force: :cascade do |t|
+    t.string "event_id"
+    t.string "recall_number"
+    t.string "status"
+    t.string "recalling_firm"
+    t.string "address_1"
+    t.string "address_2"
+    t.string "city"
+    t.string "state"
+    t.string "postal_code"
+    t.string "country"
+    t.string "classification"
+    t.string "voluntary_mandated"
+    t.text "initial_firm_notification"
+    t.text "distribution_pattern"
+    t.text "product_description"
+    t.string "product_quantity"
+    t.string "reason_for_recall"
+    t.string "product_type"
+    t.date "recall_initiation_date"
+    t.date "center_classification_date"
+    t.date "report_date"
+    t.string "code_info"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_food_events_on_event_id"
+  end
+
   create_table "pantries", force: :cascade do |t|
     t.integer "user_id"
     t.string "item_name"
@@ -67,7 +95,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
 
   create_table "users", force: :cascade do |t|
     t.string "username"
-    t.string "password"
     t.string "first_name"
     t.string "last_name"
     t.string "email"
@@ -78,6 +105,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
     t.string "password_digest"
     t.string "location"
     t.string "allergies"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
