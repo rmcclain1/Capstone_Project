@@ -1,15 +1,15 @@
+// app/profile.tsx (or app/(tabs)/profile.tsx)
 import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View, Text, StyleSheet, Image, Pressable, ScrollView,
-    RefreshControl, ActivityIndicator, Alert, Platform
+    RefreshControl, ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import EditProfileModal from '@/components/edit-profile-modal';
 import { useAuth } from '@/app/context/auth_context';
-
-const PURPLE = '#000000ff';
+import { useTheme } from '@/constants/theme_provider';
 
 /* -------------------- helpers -------------------- */
 
@@ -27,7 +27,7 @@ function toArray(raw: any): string[] {
                 try {
                     const parsed = JSON.parse(t);
                     if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-                } catch { }
+                } catch {}
             }
         }
         return raw.filter(x => typeof x === 'string');
@@ -38,7 +38,7 @@ function toArray(raw: any): string[] {
             try {
                 const parsed = JSON.parse(t);
                 if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-            } catch { }
+            } catch {}
         }
         return [t];
     }
@@ -91,9 +91,13 @@ function modalToAllergyArray(record: Record<string, boolean> = {}, other?: strin
     return out;
 }
 
+/* -------------------- screen -------------------- */
 
 export default function Profile() {
     const router = useRouter();
+    const { theme } = useTheme();
+    const s = useMemo(() => makeStyles(theme), [theme]);
+
     const { user, token, setUser, refreshUser, loading } = useAuth();
     const [editOpen, setEditOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -131,8 +135,7 @@ export default function Profile() {
                     phone_number: payload.phone,
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
-                    profile_picture_url: payload.imageUri,
-                    // ✅ convert toggle map (+ other) to a clean string[]
+                    profile_picture_url: payload.avatarUri, // <-- match modal prop name
                     allergies: modalToAllergyArray(payload.allergies, payload.otherAllergy),
                 },
             };
@@ -143,9 +146,7 @@ export default function Profile() {
             });
 
             const { data } = await api.put(`${API_BASE}/users/${user.id}`, body);
-
             setUser({ ...data, allergies: toArray((data as any).allergies) });
-
             setEditOpen(false);
         } catch (e: any) {
             console.log('Profile update failed:', e?.response?.data || e?.message);
@@ -162,7 +163,7 @@ export default function Profile() {
     if (loading || !user) {
         return (
             <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color={PURPLE} />
+                <ActivityIndicator size="large" color={theme.primary} />
             </SafeAreaView>
         );
     }
@@ -181,7 +182,16 @@ export default function Profile() {
             {/* Content */}
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 40 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                    />
+                }
+                showsVerticalScrollIndicator={false}
+                style={{ flex: 1 }}
             >
                 <View style={s.center}>
                     <Image
@@ -205,7 +215,7 @@ export default function Profile() {
                 {allergies.length ? (
                     allergies.map((a, i) => <Text key={`${a}-${i}`} style={s.allergy}>{a}</Text>)
                 ) : (
-                    <Text style={[s.allergy, { color: '#888' }]}>None</Text>
+                    <Text style={[s.allergy, { color: theme.textDim }]}>None</Text>
                 )}
             </ScrollView>
 
@@ -233,6 +243,8 @@ export default function Profile() {
 /* -------------------- small components & styles -------------------- */
 
 function InfoRow({ label, value }: { label: string; value: string }) {
+    const { theme } = useTheme();
+    const s = useMemo(() => makeStyles(theme), [theme]);
     return (
         <View style={{ marginBottom: 30 }}>
             <Text style={s.infoLabel}>{label}</Text>
@@ -241,33 +253,50 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-const s = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#fff' },
+const makeStyles = (t: any) =>
+    StyleSheet.create({
+        screen: { flex: 1, backgroundColor: t.bg },
+        header: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            height: 56,
+        },
+        back: { fontSize: 28, color: t.text },
+        headerTitle: { fontSize: 18, fontWeight: '700', color: t.text },
 
-    header: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: 16, height: 56,
-    },
-    back: { fontSize: 28, color: '#333' },
-    headerTitle: { fontSize: 18, fontWeight: '700', color: '#111' },
+        center: { alignItems: 'center', marginTop: 12 },
+        avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: t.border },
+        name: { marginTop: 12, fontSize: 22, fontWeight: '800', color: t.text },
+        username: { marginTop: 4, fontSize: 16, color: t.primary },
 
-    center: { alignItems: 'center', marginTop: 12 },
-    avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#ddd' },
-    name: { marginTop: 12, fontSize: 22, fontWeight: '800', color: '#111' },
-    username: { marginTop: 4, fontSize: 16, color: PURPLE },
+        editBtn: {
+            marginTop: 16,
+            backgroundColor: t.inputBg,
+            paddingVertical: 10,
+            paddingHorizontal: 24,
+            borderRadius: 10,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: t.border,
+        },
+        editBtnText: { color: t.text, fontWeight: '600' },
 
-    editBtn: {
-        marginTop: 16, backgroundColor: '#eeeef3ff',
-        paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10,
-    },
-    editBtnText: { color: '#111', fontWeight: '600' },
-
-    sectionTitle: {
-        marginTop: 24, marginBottom: 24, paddingHorizontal: 16,
-        fontSize: 18, fontWeight: '700', color: '#111',
-    },
-    infoLabel: { fontSize: 15, fontWeight: '600', color: '#333', marginHorizontal: 16, },
-    infoValue: { fontSize: 15, color: PURPLE, marginHorizontal: 16, },
-
-    allergy: { fontSize: 15, color: '#333', marginHorizontal: 16, marginBottom: 24, },
-});
+        sectionTitle: {
+            marginTop: 24,
+            marginBottom: 24,
+            paddingHorizontal: 16,
+            fontSize: 18,
+            fontWeight: '700',
+            color: t.text,
+        },
+        infoLabel: {
+            fontSize: 15,
+            fontWeight: '600',
+            color: t.text,
+            opacity: 0.8,
+            marginHorizontal: 16,
+        },
+        infoValue: { fontSize: 15, color: t.primary, marginHorizontal: 16 },
+        allergy: { fontSize: 15, color: t.text, marginHorizontal: 16, marginBottom: 24 },
+    });

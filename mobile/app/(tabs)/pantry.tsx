@@ -1,3 +1,4 @@
+// app/pantry.tsx (or app/(tabs)/pantry.tsx)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -18,9 +19,7 @@ import axios from 'axios';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import { useAuth } from '@/app/context/auth_context';
-
-const PURPLE = '#2362ffff';
-const BG = '#F5F3FA';
+import { useTheme } from '@/constants/theme_provider';
 
 type ApiPantry = {
     id: number;
@@ -34,7 +33,7 @@ type ApiPantry = {
     allergen?: string | null;
     expired?: boolean | null;
     category?: string | null;
-    image_url?: string | null;   // <— add this
+    image_url?: string | null;
 };
 
 type PantryItem = {
@@ -85,7 +84,7 @@ function computeStatus(expiration_date?: string | null, expiredFlag?: boolean | 
     return diffDays <= 7 ? 'soon' : 'ok';
 }
 
-function mapToUI(i: ApiPantry) {
+function mapToUI(i: ApiPantry): PantryItem {
     const status = computeStatus(i.expiration_date, i.expired ?? undefined);
     const parts: string[] = [];
     if (i.category) parts.push(String(i.category));
@@ -99,7 +98,7 @@ function mapToUI(i: ApiPantry) {
         sub: parts.join(' • '),
         status,
         expiring: status === 'soon',
-        image: i.image_url || undefined
+        image: i.image_url || undefined,
     };
 }
 
@@ -126,6 +125,9 @@ function isExpiredFromMMDDYYYY(mmddyyyy?: string) {
 
 export default function PantryScreen() {
     const { token } = useAuth();
+    const { theme } = useTheme();
+    const s = useMemo(() => makeStyles(theme), [theme]);
+
     const [q, setQ] = useState('');
     const dq = useDebounced(q, 250);
     const [tab, setTab] = useState<'all' | 'soon' | 'expired'>('all');
@@ -138,6 +140,8 @@ export default function PantryScreen() {
     const [scanOpen, setScanOpen] = useState(false);
     const [addOpen, setAddOpen] = useState(false);
 
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
     const api = useMemo(() => {
         const inst = axios.create({ baseURL: API_BASE });
         if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -148,13 +152,10 @@ export default function PantryScreen() {
         try {
             setError(null);
             setLoading(true);
-
-            // If you add backend filters later, pass them here via params.
             const { data } = await api.get('/pantries');
             const raw: ApiPantry[] = Array.isArray(data) ? data : data?.items || [];
             const mapped = raw.map(mapToUI);
 
-            // Client-side filtering for now (search + tabs)
             const filtered = mapped.filter((it) => {
                 if (tab === 'soon' && it.status !== 'soon') return false;
                 if (tab === 'expired' && it.status !== 'expired') return false;
@@ -191,8 +192,8 @@ export default function PantryScreen() {
 
     const onSubmitNew = async (form: {
         name: string;
-        imageUri?: string;        // remote URL only for Option B
-        expiresAt?: string;       // MM/DD/YYYY
+        imageUri?: string;
+        expiresAt?: string;
         manufacturer?: string;
         lotNumber?: string;
         country?: string;
@@ -227,7 +228,6 @@ export default function PantryScreen() {
                 },
             };
 
-            // Only attach if it's clearly a remote URL
             if (form.imageUri && /^https?:\/\//i.test(form.imageUri)) {
                 body.pantry.image_url = form.imageUri.trim();
             }
@@ -246,13 +246,39 @@ export default function PantryScreen() {
         }
     };
 
-    console.log(items)
+    const removeLocal = useCallback((id: string) => {
+        setItems(prev => prev.filter(x => x.id !== id));
+    }, []);
+
+    const deletePantry = useCallback(async (id: string) => {
+        try {
+            setDeletingId(id);
+            removeLocal(id); // optimistic update
+            await api.delete(`/pantries/${id}`);
+        } catch (e: any) {
+            await fetchPantry(); // restore truth on failure
+            Alert.alert('Delete failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
+        } finally {
+            setDeletingId(null);
+        }
+    }, [api, fetchPantry, removeLocal]);
+
+    const confirmDelete = useCallback((id: string, name: string) => {
+        Alert.alert(
+            'Delete item?',
+            `Are you sure you want to delete “${name}”?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => deletePantry(id) },
+            ]
+        );
+    }, [deletePantry]);
 
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
             <View style={s.header}>
                 <Pressable onPress={() => setScanOpen(true)}>
-                    <Ionicons name="qr-code-outline" size={24} color={PURPLE} />
+                    <Ionicons name="qr-code-outline" size={24} color={theme.primary} />
                 </Pressable>
                 <Text style={s.headerTitle}>Pantry</Text>
                 <Pressable onPress={() => setAddOpen(true)}>
@@ -261,12 +287,12 @@ export default function PantryScreen() {
             </View>
 
             <View style={s.searchWrap}>
-                <Ionicons name="search" size={18} color="#5F5F5F" style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={18} color={theme.textDim} style={{ marginRight: 8 }} />
                 <TextInput
                     value={q}
                     onChangeText={setQ}
                     placeholder="Search pantry"
-                    placeholderTextColor="#5F5F5F"
+                    placeholderTextColor={theme.textDim}
                     style={s.searchInput}
                     returnKeyType="search"
                 />
@@ -278,7 +304,7 @@ export default function PantryScreen() {
                         <Text
                             style={[
                                 s.tabText,
-                                tab === key && { color: PURPLE, fontWeight: '700' },
+                                tab === key && { color: theme.primary, fontWeight: '700' },
                             ]}
                         >
                             {key === 'all' ? 'All' : key === 'soon' ? 'Expires Soon' : 'Expired'}
@@ -290,8 +316,8 @@ export default function PantryScreen() {
 
             {loading ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <ActivityIndicator size="large" color={PURPLE} />
-                    {!!error && <Text style={{ marginTop: 10, color: '#B00020' }}>{error}</Text>}
+                    <ActivityIndicator size="large" color={theme.primary} />
+                    {!!error && <Text style={{ marginTop: 10, color: theme.danger || '#B00020' }}>{error}</Text>}
                 </View>
             ) : (
                 <FlatList
@@ -302,101 +328,122 @@ export default function PantryScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
-                            <Text style={{ color: '#7A6A9A' }}>
+                            <Text style={{ color: theme.textDim }}>
                                 {dq || tab !== 'all'
                                     ? 'No items match your filters.'
                                     : 'Your pantry is empty. Add your first item!'}
                             </Text>
                         </View>
                     }
-                    
                     renderItem={({ item }) => (
-                        <View style={s.row}>
+                        <Pressable
+                            style={s.row}
+                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                        >
                             <Image
-                                source={{ uri: item.image }}
+                                source={{ uri: item.image || 'https://picsum.photos/seed/pantry/96' }}
                                 style={s.thumb}
                             />
 
                             <View style={{ flex: 1 }}>
-                                <Text style={s.name}>{item.name}</Text>
-                                {!!item.sub && <Text style={s.sub}>{item.sub}</Text>}
+                                <Text style={s.name} numberOfLines={1}>{item.name}</Text>
+                                {!!item.sub && <Text style={s.sub} numberOfLines={1}>{item.sub}</Text>}
                             </View>
+
                             {item.status === 'expired' ? (
-                                <Ionicons name="alert-circle-outline" size={20} color="#B00020" />
+                                <Ionicons name="alert-circle-outline" size={20} color={theme.danger || '#EF4444'} />
                             ) : item.status === 'soon' ? (
-                                <Ionicons name="warning-outline" size={20} color={PURPLE} />
+                                <Ionicons name="warning-outline" size={20} color={theme.primary} />
                             ) : null}
-                        </View>
+
+                            <Pressable
+                                onPress={() => confirmDelete(item.id, item.name)}
+                                style={s.trashBtn}
+                                hitSlop={10}
+                                disabled={deletingId === item.id}
+                            >
+                                <Ionicons
+                                    name={deletingId === item.id ? 'time-outline' : 'trash-outline'}
+                                    size={20}
+                                    color={deletingId === item.id ? theme.textDim : (theme.danger || '#EF4444')}
+                                />
+                            </Pressable>
+                        </Pressable>
                     )}
                 />
             )}
 
             <ScanSheet visible={scanOpen} onClose={() => setScanOpen(false)} />
-
-            <AddItemModal
-                visible={addOpen}
-                onClose={() => setAddOpen(false)}
-                onSubmit={onSubmitNew}
-            />
+            <AddItemModal visible={addOpen} onClose={() => setAddOpen(false)} onSubmit={onSubmitNew} />
         </SafeAreaView>
     );
 }
 
 /* ---------------- styles ---------------- */
 
-const s = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: BG },
-    header: {
-        height: 52,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1523' },
-    add: { color: PURPLE, fontWeight: '700', fontSize: 16 },
+const makeStyles = (t: any) =>
+    StyleSheet.create({
+        screen: { flex: 1, backgroundColor: t.bg },
+        header: {
+            height: 52,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        },
+        headerTitle: { fontSize: 18, fontWeight: '800', color: t.text },
+        add: { color: t.primary, fontWeight: '700', fontSize: 16 },
 
-    searchWrap: {
-        margin: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#e9e9f5ff',
-        paddingHorizontal: 12,
-        height: 44,
-        borderRadius: 12,
-    },
-    searchInput: { flex: 1, fontSize: 16, color: '#1A1523' },
+        searchWrap: {
+            margin: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: t.inputBg,
+            paddingHorizontal: 12,
+            height: 44,
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: t.border,
+        },
+        searchInput: { flex: 1, fontSize: 16, color: t.text },
 
-    tabs: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        borderBottomColor: '#EEE9F7',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    tabBtn: { alignItems: 'center', paddingVertical: 8, flex: 1 },
-    tabText: { fontSize: 15, color: '#5F5F5F' },
-    tabIndicator: {
-        marginTop: 4,
-        width: 20,
-        height: 3,
-        borderRadius: 2,
-        backgroundColor: '#2362ffff',
-    },
+        tabs: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            borderBottomColor: t.border,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+        },
+        tabBtn: { alignItems: 'center', paddingVertical: 8, flex: 1 },
+        tabText: { fontSize: 15, color: t.textDim },
+        tabIndicator: {
+            marginTop: 4,
+            width: 20,
+            height: 3,
+            borderRadius: 2,
+            backgroundColor: t.primary,
+        },
 
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 14,
-        padding: 12,
-        gap: 12,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: 1,
-    },
-    thumb: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#EEE' },
-    name: { fontSize: 16, fontWeight: '700', color: '#1A1523' },
-    sub: { fontSize: 13, color: '#5F5F5F', marginTop: 2 },
-});
+        row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: t.card,
+            borderRadius: 14,
+            padding: 12,
+            gap: 12,
+            shadowColor: '#000',
+            shadowOpacity: t.name === 'light' ? 0.05 : 0.15,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 3 },
+            ...(Platform.OS === 'android' ? { elevation: 1 } : null),
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: t.name === 'dark' ? t.border : 'transparent',
+        },
+        trashBtn: {
+            marginLeft: 8,
+            padding: 6,
+            borderRadius: 8,
+        },
+        thumb: { width: 48, height: 48, borderRadius: 10, backgroundColor: t.border },
+        name: { fontSize: 16, fontWeight: '700', color: t.text },
+        sub: { fontSize: 13, color: t.textDim, marginTop: 2 },
+    });

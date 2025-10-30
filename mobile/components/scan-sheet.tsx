@@ -11,6 +11,7 @@ import {
     SafeAreaView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTheme } from '@/constants/theme_provider';
 
 type Props = {
     visible: boolean;
@@ -18,6 +19,9 @@ type Props = {
 };
 
 export default function ScanSheet({ visible, onClose }: Props) {
+    const { theme } = useTheme();
+    const styles = getStyles(theme);
+
     const backdrop = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(40)).current;
 
@@ -38,7 +42,10 @@ export default function ScanSheet({ visible, onClose }: Props) {
         <Modal visible={visible} transparent animationType="none" onShow={open} onRequestClose={close}>
             {/* Dimmed backdrop */}
             <Animated.View
-                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)', opacity: backdrop }]}
+                style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: theme.overlay, opacity: backdrop },
+                ]}
             />
 
             {/* Bottom sheet */}
@@ -52,7 +59,7 @@ export default function ScanSheet({ visible, onClose }: Props) {
                     {/* Header */}
                     <View style={styles.headerRow}>
                         <TouchableOpacity onPress={close} hitSlop={12} style={styles.iconBtn}>
-                            <Ionicons name="close" size={20} color="#0F172A" />
+                            <Ionicons name="close" size={20} color={theme.text} />
                         </TouchableOpacity>
                         <Text style={styles.title}>Scan Barcode</Text>
                         <View style={styles.iconBtn} />{/* spacer */}
@@ -94,114 +101,122 @@ export default function ScanSheet({ visible, onClose }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    sheet: {
-        flex: 1,
-        margin: 10,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        borderTopRightRadius: 24,
-        paddingBottom: 24,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOpacity: 0.10,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: -4 },
-            },
-            android: { elevation: 12 },
-        }),
-    },
+/* ============== styles via theme tokens ============== */
 
-    grabberWrap: { alignItems: 'center', paddingTop: 8 },
-    grabber: { width: 36, height: 5, borderRadius: 999, backgroundColor: '#E5E7EB' },
+const getStyles = (theme: import('@/constants/theme').Tokens) =>
+    StyleSheet.create({
+        safeArea: {
+            flex: 1,
+            justifyContent: 'flex-end',
+        },
+        sheet: {
+            flex: 1,
+            margin: 10,
+            backgroundColor: theme.surface,
+            borderRadius: 24,
+            paddingBottom: 24,
+            ...Platform.select({
+                ios: {
+                    shadowColor: theme.shadow,
+                    shadowOpacity: 0.2,
+                    shadowRadius: 18,
+                    shadowOffset: { width: 0, height: -4 },
+                },
+                android: { elevation: 12 },
+            }),
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: theme.border,
+        },
 
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingTop: 8,
-    },
-    iconBtn: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 10,
-        backgroundColor: '#F8FAFC',
-    },
-    title: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#0F172A' },
-    subtitle: { textAlign: 'center', color: '#334155', marginTop: 8, marginBottom: 10, fontSize: 15 },
+        grabberWrap: { alignItems: 'center', paddingTop: 8 },
+        grabber: { width: 36, height: 5, borderRadius: 999, backgroundColor: theme.border },
 
-    frame: {
-        marginHorizontal: 16,
-        height: 180,
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#CBD5E1',
-    },
-    frameBorder: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: '#E2E8F0',
-    },
+        headerRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 14,
+            paddingTop: 8,
+        },
+        iconBtn: {
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 10,
+            backgroundColor: theme.inputBg,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: theme.border,
+        },
+        title: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: theme.text },
+        subtitle: { textAlign: 'center', color: theme.textDim, marginTop: 8, marginBottom: 10, fontSize: 15 },
 
-    card: {
-        marginTop: 12,
-        marginHorizontal: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#FFFFFF',
-    },
-    cardRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        gap: 12,
-    },
-    thumb: {
-        width: 44,
-        height: 44,
-        borderRadius: 10,
-        backgroundColor: '#F1F5F9',
-    },
-    itemTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
-    itemSub: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+        frame: {
+            marginHorizontal: 16,
+            height: 180,
+            borderRadius: 16,
+            overflow: 'hidden',
+            backgroundColor: theme.tint,
+        },
+        frameBorder: {
+            ...StyleSheet.absoluteFillObject,
+            borderRadius: 16,
+            borderWidth: 2,
+            borderColor: theme.border,
+        },
 
-    pillBtn: {
-        height: 36,
-        paddingHorizontal: 16,
-        borderRadius: 999,
-        backgroundColor: '#EDE9FE',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#DDD6FE',
-    },
-    pillText: { color: '#6D28D9', fontWeight: '700' },
+        card: {
+            marginTop: 12,
+            marginHorizontal: 16,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: theme.border,
+            backgroundColor: theme.surface,
+        },
+        cardRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 12,
+            gap: 12,
+        },
+        thumb: {
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            backgroundColor: theme.inputBg,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: theme.border,
+        },
+        itemTitle: { fontSize: 16, fontWeight: '700', color: theme.text },
+        itemSub: { fontSize: 13, color: theme.textDim, marginTop: 2 },
 
-    actionsRow: {
-        flexDirection: 'row',
-        gap: 12,
-        marginHorizontal: 16,
-        marginTop: 12,
-    },
-    actionBtn: {
-        flex: 1,
-        height: 46,
-        borderRadius: 14,
-        backgroundColor: '#F8FAFC',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-    },
-    actionText: { color: '#111827', fontWeight: '700' },
-});
+        pillBtn: {
+            height: 36,
+            paddingHorizontal: 16,
+            borderRadius: 999,
+            backgroundColor: theme.primarySoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.border,
+        },
+        pillText: { color: theme.primary, fontWeight: '700' },
+
+        actionsRow: {
+            flexDirection: 'row',
+            gap: 12,
+            marginHorizontal: 16,
+            marginTop: 12,
+        },
+        actionBtn: {
+            flex: 1,
+            height: 46,
+            borderRadius: 14,
+            backgroundColor: theme.inputBg,
+            borderWidth: 1,
+            borderColor: theme.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+        },
+        actionText: { color: theme.text, fontWeight: '700' },
+    });

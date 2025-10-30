@@ -1,25 +1,46 @@
-import React from "react";
+import React from 'react';
 import 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '@/app/context/auth_context';
+import { ThemeProvider, useTheme } from '@/constants/theme_provider';
+import { View } from 'react-native';
+
+function ThemedStack() {
+    const { theme } = useTheme();
+    return (
+        <View style={{ flex: 1, backgroundColor: theme.bg }}>
+            <Stack
+                screenOptions={{
+                    headerShown: false,                 // you can toggle per-screen later
+                    contentStyle: { backgroundColor: theme.bg },
+                    // If you show headers on some screens later, these will apply:
+                    headerStyle: { backgroundColor: theme.card },
+                    headerTitleStyle: { color: theme.text },
+                    headerTintColor: theme.primary,
+                }}
+            >
+                {/* Tabs */}
+                <Stack.Screen name="(tabs)" />
+                {/* Standalone screens */}
+                <Stack.Screen name="login" />
+                <Stack.Screen name="notifications" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="organization" />
+                <Stack.Screen name="ai" />
+                <Stack.Screen name="manual-entry" />
+                <Stack.Screen name="recall/[id]" />
+                <Stack.Screen name="signup" />
+            </Stack>
+        </View>
+    );
+}
 
 export default function RootLayout() {
-  return (
-      <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-              {/* Tabs */}
-              <Stack.Screen name="(tabs)" />
-              {/* Standalone screens */}
-              <Stack.Screen name="login" />
-              <Stack.Screen name="notifications" />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="organization" />
-              <Stack.Screen name="ai" />
-              <Stack.Screen name="manual-entry" />
-              <Stack.Screen name="recall/[id]" />
-          <Stack.Screen name="signup" />
-
-    </Stack>
-      </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <ThemeProvider>
+                <ThemedStack />
+            </ThemeProvider>
+        </AuthProvider>
+    );
 }
