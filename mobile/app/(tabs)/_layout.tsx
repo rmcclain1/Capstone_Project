@@ -1,79 +1,97 @@
+// app/(tabs)/_layout.tsx
+import React, { useMemo } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React from "react";
-
-const PURPLE = '#2362ffff';
+import { StyleSheet, Platform } from 'react-native';
+import { useTheme } from '@/constants/theme_provider';
 
 export default function Layout() {
-  return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: PURPLE,
-        tabBarInactiveTintColor: '#7A7A7A',
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        tabBarStyle: {
-          height: 86,
-          paddingTop: 8,
-          paddingBottom: 18,
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: -2 },
-          backgroundColor: '#fff',
-          borderTopLeftRadius: 22,
-          borderTopRightRadius: 22,
-          position: 'absolute',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="pantry"
-        options={{
-          title: 'Pantry',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="basket-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="recalls"
-        options={{
-          title: 'Recalls',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="alert-decagram-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: 'Alerts',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
+    const { theme } = useTheme();
+
+    const tabBarStyle = useMemo(
+        () => [
+            styles.baseBar,
+            {
+                backgroundColor: theme.card,
+                borderTopColor: theme.border,
+                shadowOpacity: theme.name === 'light' ? 0.08 : 0.25,
+            },
+        ],
+        [theme],
+    );
+
+    return (
+        <Tabs
+            screenOptions={{
+                headerShown: false,
+                tabBarActiveTintColor: theme.primary,
+                tabBarInactiveTintColor: theme.textDim,
+                tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+                tabBarStyle,
+            }}
+        >
+            <Tabs.Screen
+                name="index"
+                options={{
+                    title: 'Home',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="pantry"
+                options={{
+                    title: 'Pantry',
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialCommunityIcons name="basket-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="recalls"
+                options={{
+                    title: 'Recalls',
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialCommunityIcons name="alert-decagram-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="notifications"
+                options={{
+                    title: 'Notifications',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="notifications-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="settings"
+                options={{
+                    title: 'Settings',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="settings-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+        </Tabs>
+    );
 }
+
+const styles = StyleSheet.create({
+    baseBar: {
+        height: 86,
+        paddingTop: 8,
+        paddingBottom: 18,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        position: 'absolute',
+        // shadows
+        shadowColor: '#000',
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: -2 },
+        ...(Platform.OS === 'android' ? { elevation: 10 } : null),
+    },
+});
