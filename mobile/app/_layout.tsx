@@ -11,6 +11,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               {/* Standalone screens */}
               <Stack.Screen name="login" />
+              <Stack.Screen name="auth/reset-password" />
               <Stack.Screen name="notifications" />
               <Stack.Screen name="settings" />
               <Stack.Screen name="organization" />
@@ -18,7 +19,6 @@ export default function RootLayout() {
               <Stack.Screen name="manual-entry" />
               <Stack.Screen name="recall/[id]" />
           <Stack.Screen name="signup" />
-
     </Stack>
       </AuthProvider>
   );
