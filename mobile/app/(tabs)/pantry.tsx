@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -19,7 +20,7 @@ import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import { useAuth } from '@/app/context/auth_context';
 
-const PURPLE = '#2362ffff';
+const BLUE = '#2362ffff';
 const BG = '#F5F3FA';
 
 type ApiPantry = {
@@ -252,7 +253,7 @@ export default function PantryScreen() {
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
             <View style={s.header}>
                 <Pressable onPress={() => setScanOpen(true)}>
-                    <Ionicons name="qr-code-outline" size={24} color={PURPLE} />
+                    <Ionicons name="qr-code-outline" size={24} color={BLUE} />
                 </Pressable>
                 <Text style={s.headerTitle}>Pantry</Text>
                 <Pressable onPress={() => setAddOpen(true)}>
@@ -265,7 +266,7 @@ export default function PantryScreen() {
                 <TextInput
                     value={q}
                     onChangeText={setQ}
-                    placeholder="Search pantry"
+                    placeholder="Search"
                     placeholderTextColor="#5F5F5F"
                     style={s.searchInput}
                     returnKeyType="search"
@@ -278,7 +279,7 @@ export default function PantryScreen() {
                         <Text
                             style={[
                                 s.tabText,
-                                tab === key && { color: PURPLE, fontWeight: '700' },
+                                tab === key && { color: BLUE, fontWeight: '700' },
                             ]}
                         >
                             {key === 'all' ? 'All' : key === 'soon' ? 'Expires Soon' : 'Expired'}
@@ -290,10 +291,11 @@ export default function PantryScreen() {
 
             {loading ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <ActivityIndicator size="large" color={PURPLE} />
+                    <ActivityIndicator size="large" color={BLUE} />
                     {!!error && <Text style={{ marginTop: 10, color: '#B00020' }}>{error}</Text>}
                 </View>
             ) : (
+
                 <FlatList
                     data={items}
                     keyExtractor={(it) => it.id}
@@ -309,11 +311,17 @@ export default function PantryScreen() {
                             </Text>
                         </View>
                     }
-                    
+
                     renderItem={({ item }) => (
+                        <TouchableOpacity>
+                            
                         <View style={s.row}>
                             <Image
-                                source={{ uri: item.image }}
+                                source={
+                                    item.image
+                                        ? { uri: item.image }
+                                        : require('@/assets/images/unknown_image.jpg')
+                                }
                                 style={s.thumb}
                             />
 
@@ -324,9 +332,10 @@ export default function PantryScreen() {
                             {item.status === 'expired' ? (
                                 <Ionicons name="alert-circle-outline" size={20} color="#B00020" />
                             ) : item.status === 'soon' ? (
-                                <Ionicons name="warning-outline" size={20} color={PURPLE} />
+                                <Ionicons name="warning-outline" size={20} color="#B00020" />
                             ) : null}
                         </View>
+                        </TouchableOpacity>
                     )}
                 />
             )}
@@ -354,7 +363,7 @@ const s = StyleSheet.create({
         justifyContent: 'space-between',
     },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1523' },
-    add: { color: PURPLE, fontWeight: '700', fontSize: 16 },
+    add: { color: BLUE, fontWeight: '700', fontSize: 16 },
 
     searchWrap: {
         margin: 16,
@@ -399,4 +408,16 @@ const s = StyleSheet.create({
     thumb: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#EEE' },
     name: { fontSize: 16, fontWeight: '700', color: '#1A1523' },
     sub: { fontSize: 13, color: '#5F5F5F', marginTop: 2 },
+
+    button: {
+        backgroundColor: '#2563EB',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 32,
+        marginTop: 8,
+        minWidth: 180,
+    },
 });
