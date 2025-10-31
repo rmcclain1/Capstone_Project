@@ -7,7 +7,7 @@ import { useAuth } from "@/app/context/auth_context";
 const PURPLE = '#2563EB';
 
 export default function Home() {
-  const { user, logout, refreshUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
 
