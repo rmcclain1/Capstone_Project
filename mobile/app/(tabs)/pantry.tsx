@@ -1,5 +1,6 @@
 // app/pantry.tsx (or app/(tabs)/pantry.tsx)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -19,6 +20,9 @@ import axios from 'axios';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import { useAuth } from '@/app/context/auth_context';
+
+const BLUE = '#2362ffff';
+const BG = '#F5F3FA';
 import { useTheme } from '@/constants/theme_provider';
 
 type ApiPantry = {
@@ -320,6 +324,7 @@ export default function PantryScreen() {
                     {!!error && <Text style={{ marginTop: 10, color: theme.danger || '#B00020' }}>{error}</Text>}
                 </View>
             ) : (
+
                 <FlatList
                     data={items}
                     keyExtractor={(it) => it.id}

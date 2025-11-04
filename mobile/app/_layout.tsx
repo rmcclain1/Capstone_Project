@@ -23,6 +23,7 @@ function ThemedStack() {
                 <Stack.Screen name="(tabs)" />
                 {/* Standalone screens */}
                 <Stack.Screen name="login" />
+                <Stack.Screen name="auth/reset-password" />
                 <Stack.Screen name="notifications" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="organization" />
