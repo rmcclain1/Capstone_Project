@@ -27,6 +27,17 @@ export default function SettingsScreen() {
     const [soundEnabled, setSoundEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    const transition_to_reset_password = async () => {
+    setLoading(true);
+    try {
+      router.push('/auth/reset-password');
+    } catch (e : any) { 
+      Alert.alert('Routing Failed');
+    } finally { 
+      setLoading(false);
+    }
+  };
+
     const handleLogout = async () => {
         setLoading(true);
         try {
@@ -52,7 +63,7 @@ export default function SettingsScreen() {
 
             <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
                 <Text style={s.section}>Account</Text>
-                <Row label="Change Password" onPress={() => {}} />
+                <Row label="Change Password" onPress={transition_to_reset_password} />
                 <Row label="Privacy and Security" onPress={() => {}} />
                 <Row label="Log Out" value={loading ? '…' : undefined} onPress={handleLogout} />
 
