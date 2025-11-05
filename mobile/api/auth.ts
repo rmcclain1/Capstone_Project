@@ -1,19 +1,39 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// mobile/api/auth.ts
+import { signInWithGoogleAndGetFirebaseIdToken } from '@/lib/google';
+import { firebaseSignInWithEmail, firebaseSignUpWithEmail, firebaseSendReset, firebaseUpdatePassword } from '@/lib/emailPassword';
+import { postToRails, clearRailsJwt, getRailsJwt } from '@/api/session';
 
-const API_URL = 'http://localhost:3000/api/v1'
+export async function loginWithGoogle(): Promise<{ ok: boolean; user?: Record<string, any> }> {
+  const firebaseIdToken = await signInWithGoogleAndGetFirebaseIdToken();
+  const session = await postToRails(firebaseIdToken);
+  return { ok: session.ok, user: session.user };
+}
 
-export const login = async (username: string, password: string) => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, {
-      username,
-      password,
-    });
+export async function loginWithEmailPassword(email: string, password: string) {
+  const { idToken } = await firebaseSignInWithEmail(email, password);
+  const session = await postToRails(idToken);
+  return { ok: session.ok, user: session.user };
+}
 
-    const { token, user } = response.data;
-    await AsyncStorage.setItem('token', token);
-    return user;
-  } catch (err: any) {
-    throw err.response?.data?.error || 'Login failed';
-  }
-};
+export async function signupWithEmailPassword(email: string, password: string) {
+  const { idToken } = await firebaseSignUpWithEmail(email, password);
+  const session = await postToRails(idToken);
+  return { ok: session.ok, user: session.user };
+}
+
+export async function sendPasswordReset(email: string) {
+  await firebaseSendReset(email);
+  return { ok: true };
+}
+
+export async function changePassword(newPassword: string) {
+  await firebaseUpdatePassword(newPassword);
+  return { ok: true };
+}
+
+export async function getSessionToken(): Promise<string | null> {
+  return await getRailsJwt();
+}
+export async function logout(): Promise<void> {
+  await clearRailsJwt();
+}

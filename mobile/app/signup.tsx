@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { signup } from '@/api/users';
 import { router } from 'expo-router';
+import { signupWithEmailPassword } from '@/api/auth'; // NEW: Firebase email/password -> Rails exchange
 
 export default function SignUp() {
-    const [username, setUsername] = useState('');
+    const [username, setUsername] = useState(''); // optional display handle; not needed for Firebase auth
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
 
     const onSubmit = async () => {
-        if (!username || !email || !password || !confirm) {
+        if (!email || !password || !confirm) {
             Alert.alert('Missing info', 'Please fill in all fields.');
             return;
         }
@@ -29,12 +29,13 @@ export default function SignUp() {
         }
         try {
             setLoading(true);
-            await signup({
-                username,
-                email,
-                password,
-                password_confirmation: confirm,
-            });
+            // Create Firebase account, then exchange Firebase ID token for Rails JWT and store it
+            const res = await signupWithEmailPassword(email, password);
+            if (!res?.ok) throw new Error('Signup failed');
+
+            // (Optional) If you want to persist `username` as a display handle on Rails,
+            // you can PATCH /api/v1/users/:id after calling /me. Skipping here to keep styling/flow unchanged.
+
             Alert.alert('Success', 'Account created! Please log in.');
             router.replace('/login');
         } catch (e: any) {
@@ -62,7 +63,6 @@ export default function SignUp() {
                         Already have an account? <Text style={styles.signupLink}>Log in</Text>
                     </Text>
                 </TouchableOpacity>
-
             </View>
         </SafeAreaView>
     );
@@ -75,15 +75,6 @@ const styles = StyleSheet.create({
     input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
     cta: { backgroundColor: '#111827', borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
     ctaText: { color: 'white', fontSize: 16, fontWeight: '700' },
-
-    signupText: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#6B7280', 
-    },
-    signupLink: {
-        fontWeight: '700',
-        color: '#111827', 
-    },
-
+    signupText: { textAlign: 'center', fontSize: 14, color: '#6B7280' },
+    signupLink: { fontWeight: '700', color: '#111827' },
 });

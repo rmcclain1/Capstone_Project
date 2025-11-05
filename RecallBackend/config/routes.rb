@@ -1,17 +1,17 @@
 Rails.application.routes.draw do
   namespace :api do
-    namespace :v1 do
-      # Password management routes
-      post '/users/verify_password', to: 'users#verify_password' # for checking if old password is correct
-      patch '/users/update_password', to: 'users#update_password' # for actually updating the password
-      
-      # User and Pantry resources
-      resources :users, only: [:index, :show, :create, :update, :destroy]
+    namespace :v1, defaults: { format: :json } do
+      resources :users,    only: [:index, :show, :create, :update, :destroy]
       resources :pantries, only: [:index, :show, :create, :update, :destroy]
 
-      # Login and Logout routes
-      post '/login', to: 'sessions#create'
-      delete '/logout', to: 'sessions#destroy' # Optional
+      # Firebase ID token -> Rails JWT exchange + session endpoints
+      post   '/sessions', to: 'sessions#create'
+      delete '/sessions', to: 'sessions#destroy'
+      get    '/me',       to: 'sessions#me'
+
+      # Optional backward-compatible aliases (safe to keep or remove later)
+      post   '/login',  to: 'sessions#create'
+      delete '/logout', to: 'sessions#destroy'
     end
   end
 end

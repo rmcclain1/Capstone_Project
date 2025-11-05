@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
+// Client auth API (Firebase + Rails exchange)
+import {
+    loginWithEmailPassword,   // signs into Firebase email/password, exchanges for Rails JWT
+    getSessionToken,          // reads Rails JWT from SecureStore/localStorage
+    logout as apiLogout,      // clears stored Rails JWT
+} from '@/api/auth';
+
 type User = {
     id: number;
-    username: string;
+    username?: string;
     email?: string;
     first_name?: string;
     last_name?: string;
@@ -14,13 +20,14 @@ type User = {
     location?: string;
     profile_picture_url?: string;
     allergies?: string[] | null;
+    avatar_url?: string; // Rails payload often returns this when coming from Google/Firebase
 };
 
 type AuthContextShape = {
     user: User | null;
     token: string | null;
     loading: boolean;
-    login: (username: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
@@ -28,15 +35,13 @@ type AuthContextShape = {
 
 const AuthContext = createContext<AuthContextShape>(null as any);
 
-const TOKEN_KEY = 'token';
-const USER_ID_KEY = 'userId';
-
 function getBaseUrl() {
-    // Android emulator special host; iOS sim + web can use 127.0.0.1
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
+    // Keep your emulator defaults; API path added per-call
+    if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
+    return 'http://127.0.0.1:3000';
 }
-const API_BASE = getBaseUrl();
+const API_ROOT = getBaseUrl();
+const API = `${API_ROOT}/api/v1`;
 
 function toArray(raw: any): string[] {
     if (Array.isArray(raw)) return raw.filter(x => typeof x === 'string');
@@ -47,7 +52,6 @@ function toArray(raw: any): string[] {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     // keep axios header in sync with token
@@ -57,45 +61,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [token]);
 
     const refreshUser = useCallback(async () => {
-        if (!token || !userId) return;
-        const { data } = await axios.get<User>(`${API_BASE}/users/${userId}`);
-        setUser({ ...data, allergies: toArray((data as any).allergies) });
-    }, [token, userId]);
+        if (!token) return;
+        const { data } = await axios.get<{ ok: boolean; user: User }>(`${API}/me`);
+        if (data?.ok && data.user) {
+            // normalize allergies to string[]
+            setUser({ ...data.user, allergies: toArray((data.user as any).allergies) });
+        }
+    }, [token]);
 
+    // bootstrap from SecureStore/localStorage (via getSessionToken), then load /me
     useEffect(() => {
         (async () => {
             try {
-                const [[, t], [, uid]] = await AsyncStorage.multiGet([TOKEN_KEY, USER_ID_KEY]);
-                if (t && uid) {
+                const t = await getSessionToken();
+                if (t) {
                     setToken(t);
-                    setUserId(uid);
                     axios.defaults.headers.common.Authorization = `Bearer ${t}`;
                     await refreshUser();
                 }
-            } catch (e) {
             } finally {
                 setLoading(false);
             }
         })();
     }, [refreshUser]);
 
-    const login = useCallback(async (username: string, password: string) => {
-        const { data } = await axios.post(`${API_BASE}/login`, { username, password });
-        const { token: t, user } = data;
-        await AsyncStorage.multiSet([[TOKEN_KEY, t], [USER_ID_KEY, String(user.id)]]);
-        setToken(t);
-        setUserId(String(user.id));
-        axios.defaults.headers.common.Authorization = `Bearer ${t}`;
-        // fetch fresh user from backend
+    // Email/password now handled by Firebase; then we exchange for Rails JWT
+    const login = useCallback(async (email: string, password: string) => {
+        const res = await loginWithEmailPassword(email, password);
+        if (!res?.ok) throw new Error('Authentication failed');
+        // Rails JWT is already stored by the client API; read it back to sync axios header
+        const t = await getSessionToken();
+        setToken(t ?? null);
         await refreshUser();
     }, [refreshUser]);
 
     const logout = useCallback(async () => {
-        try { await axios.delete(`${API_BASE}/logout`); } catch { }
-        await AsyncStorage.multiRemove([TOKEN_KEY, USER_ID_KEY]);
+        try { await apiLogout(); } catch { }
         setToken(null);
-        setUserId(null);
         setUser(null);
+        delete axios.defaults.headers.common.Authorization;
     }, []);
 
     return (
