@@ -160,10 +160,22 @@ export default function Profile() {
         }
     }, [user, token, setUser]);
 
-    if (loading || !user) {
+    if (loading) {
         return (
             <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
                 <ActivityIndicator size="large" color={theme.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    // If not loading and no user, navigate away or show a CTA
+    if (!user) {
+        return (
+            <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ color: theme.text, marginBottom: 12 }}>You’re signed out.</Text>
+                <Pressable onPress={() => router.replace('/login')} style={s.editBtn}>
+                    <Text style={s.editBtnText}>Sign in</Text>
+                </Pressable>
             </SafeAreaView>
         );
     }
