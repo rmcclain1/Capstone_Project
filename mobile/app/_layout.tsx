@@ -31,6 +31,8 @@ function ThemedStack() {
                 <Stack.Screen name="manual-entry" />
                 <Stack.Screen name="recall/[id]" />
                 <Stack.Screen name="signup" />
+                <Stack.Screen name="TermsOfService" />
+                <Stack.Screen name="Contact" />
             </Stack>
         </View>
     );
