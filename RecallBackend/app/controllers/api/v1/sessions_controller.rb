@@ -1,6 +1,6 @@
 class Api::V1::SessionsController < ApplicationController
   # Clients hit this WITHOUT a Rails JWT (they only have a Firebase ID token)
-  skip_before_action :authorize_request, only: [:create, :me]
+  skip_before_action :authorize_request, only: [:create]
 
   include AuthenticateFirebase
 
@@ -44,7 +44,7 @@ class Api::V1::SessionsController < ApplicationController
   # GET /api/v1/me  (requires Rails JWT)
   def me
     return render json: { ok: false, error: 'Not Authorized' }, status: :unauthorized unless @current_user
-    render json: { ok: true, user: user_payload(@current_user) }
+    render json: { ok: true, user: user_payload(@current_user) }, status: :ok
   end
 
   private

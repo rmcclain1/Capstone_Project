@@ -1,5 +1,7 @@
-import axios from 'axios';
-const API_URL = 'http://127.0.0.1:3000/api/v1';
+import { api as axios } from '@/lib/api';
+import { apiUrl } from '@/lib/env';
+const API_URL = apiUrl('/'); 
+
 
 export async function signup(payload: {
     username: string;

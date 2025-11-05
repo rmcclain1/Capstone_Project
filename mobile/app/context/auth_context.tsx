@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import { api as axios } from '@/lib/api';
+
 import { Platform } from 'react-native';
 
 // Client auth API (Firebase + Rails exchange)
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const t = await getSessionToken();
                 if (t) {
                     setToken(t);
-                    axios.defaults.headers.common.Authorization = `Bearer ${t}`;
+                    
                     await refreshUser();
                 }
             } finally {

@@ -6,7 +6,7 @@ import {
     RefreshControl, ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import { api as axios } from '@/lib/api';
 import EditProfileModal from '@/components/edit-profile-modal';
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
