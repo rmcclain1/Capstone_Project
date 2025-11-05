@@ -3,15 +3,18 @@ class Api::V1::UsersController < ApplicationController
   # Allow sign-up without a token
   skip_before_action :authorize_request, only: [:create]
 
+  # INDEX method
   def index
     render json: User.all
   end
 
+  # SHOW method
   def show
     user = User.find(params[:id])
     render json: user
   end
 
+  # CREATE method
   def create
     user = User.new(user_params_for_create)
     if user.save
@@ -21,6 +24,7 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
+  # UPDATE method
   def update
     return render json: { error: 'Forbidden' }, status: :forbidden unless current_user&.id == params[:id].to_i
 
@@ -42,6 +46,30 @@ class Api::V1::UsersController < ApplicationController
       render json: { error: 'Server error' }, status: :internal_server_error
     end
   end
+
+  def verify_password
+  return render json: { error: 'Forbidden' }, status: :forbidden unless current_user
+
+  if current_user.authenticate(params[:old_password])
+    render json: { valid: true }, status: :ok
+  else
+    render json: { valid: false }, status: :unauthorized
+  end
+end
+
+def update_password
+  return render json: { error: 'Forbidden' }, status: :forbidden unless current_user
+
+  if current_user.authenticate(params[:old_password])
+    if current_user.update(password: params[:new_password])
+      render json: { message: 'Password updated successfully' }, status: :ok
+    else
+      render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+    end
+  else
+    render json: { error: 'Incorrect current password' }, status: :unauthorized
+  end
+end
 
   private
 

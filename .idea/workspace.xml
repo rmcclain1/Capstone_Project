@@ -4,26 +4,32 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="implemented light/dark mode">
-      <change afterPath="$PROJECT_DIR$/mobile/constants/theme_provider.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="Merge branch 'khurshed'&#10;&#10;# Conflicts:&#10;#&#9;mobile/api/auth.ts&#10;#&#9;mobile/app/(tabs)/index.tsx&#10;#&#9;mobile/app/(tabs)/pantry.tsx&#10;#&#9;mobile/app/login.tsx&#10;#&#9;mobile/app/profile.tsx&#10;#&#9;mobile/components/add-item-modal.tsx&#10;#&#9;mobile/components/edit-profile-modal.tsx">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002080529_add_location_to_users.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002080724_add_allergies_to_users.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251002214401_create_active_storage_tables.active_storage.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014042006_change_pantry_dates_and_add_indexes.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014043220_add_quantity_to_pantries.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/db/migrate/20251014043743_add_image_url_to_pantries.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/app/utils/upload.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/pantries_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/pantries_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/pantry.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/pantry.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RecallBackend/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/db/schema.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/api/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/api/auth.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/settings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/settings.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/modal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/notifications/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/notifications/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/login.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/profile.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/scan.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/scan.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/components/add-item-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/add-item-modal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/edit-profile-modal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/components/scan-sheet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/components/scan-sheet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/constants/theme.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/constants/theme.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,12 +60,12 @@
     }
   ]
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com:rmcclain1/Capstone_Project.git",
-    "accountId": "881f0c2d-3b77-477c-a2fa-e2386331bc28"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/rmcclain1/Capstone_Project.git&quot;,
+    &quot;accountId&quot;: &quot;881f0c2d-3b77-477c-a2fa-e2386331bc28&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -68,28 +74,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;/Users/khurshed/WebstormProjects/Capstone_Project/mobile/node_modules/typescript/lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Merging main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "ts.external.directory.path": "/Users/khurshed/WebstormProjects/Capstone_Project/mobile/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -108,7 +114,6 @@
       <workItem from="1758771311346" duration="29284000" />
       <workItem from="1759389497143" duration="428000" />
       <workItem from="1759389933759" duration="14237000" />
-      <workItem from="1761774561454" duration="5698000" />
     </task>
     <task id="LOCAL-00001" summary="created UI pages">
       <option name="closed" value="true" />
@@ -144,7 +149,6 @@
     <MESSAGE value="created UI pages" />
     <MESSAGE value="implemented login func" />
     <MESSAGE value="refactored comments" />
-    <MESSAGE value="implemented light/dark mode" />
-    <option name="LAST_COMMIT_MESSAGE" value="implemented light/dark mode" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactored comments" />
   </component>
 </project>

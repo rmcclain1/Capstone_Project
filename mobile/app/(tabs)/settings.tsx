@@ -9,6 +9,7 @@ import {
     Switch,
     ScrollView,
     Alert,
+    TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,33 @@ export default function SettingsScreen() {
     const [pushEnabled, setPushEnabled] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const transition_to_reset_password = async () => {
+        setLoading(true);
+        try {
+            router.push('/auth/reset-password');
+        } catch (e: any) {
+            Alert.alert('Routing Failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const transition_to_TOS = async () => {
+        try {
+            router.push('/TermsOfService');
+        } catch (e: any) {
+            Alert.alert('Routing Failed');
+        }
+    };
+
+    const transition_to_contact = async () => {
+        try {
+            router.push('/Contact');
+        } catch (e: any) {
+            Alert.alert('Routing Failed');
+        }
+    };
 
     const handleLogout = async () => {
         setLoading(true);
@@ -51,11 +79,15 @@ export default function SettingsScreen() {
             </View>
 
             <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+                {/* Account Settings */}
                 <Text style={s.section}>Account</Text>
-                <Row label="Change Password" onPress={() => {}} />
-                <Row label="Privacy and Security" onPress={() => {}} />
+
+                <Row label="Change Password" onPress={transition_to_reset_password} />
+                <Row label="Privacy and Security" onPress={() => { }} />
                 <Row label="Log Out" value={loading ? '…' : undefined} onPress={handleLogout} />
 
+
+                {/* Notification Settings */}
                 <Text style={s.section}>Notifications</Text>
                 <RowSwitch
                     label="Push Notifications"
@@ -68,11 +100,12 @@ export default function SettingsScreen() {
                     onValueChange={setSoundEnabled}
                 />
 
-                {/* Preferences */}
+                {/* Application Preferences Settings */}
                 <Text style={s.section}>App Preferences</Text>
-                <Row label="Language" value="English" onPress={() => {}} />
 
-                {/* Theme segmented control */}
+                <Row label="Language" value="English" onPress={() => { }} />
+
+
                 <View style={s.group}>
                     <Text style={s.groupLabel}>Theme</Text>
                     <ThemeSegment
@@ -83,25 +116,35 @@ export default function SettingsScreen() {
 
                 {/* Help & Support */}
                 <Text style={s.section}>Help & Support</Text>
-                <Row label="FAQ" onPress={() => {}} />
-                <Row label="Contact Us" onPress={() => {}} />
 
-                {/* About */}
-                <Text style={s.section}>About</Text>
-                <Row label="App Version" value="1.2.3" />
-                <Row label="Terms of Service" onPress={() => {}} />
+                <Row label="Contact Us" onPress={transition_to_contact} />
+
+
+                {/* Legal Information */}
+                <Text style={s.section}>Legal</Text>
+
+                <Row label="Terms of Service" onPress={transition_to_TOS} />
+
+                {/* Application History (should be incremented after updates) */}
+                <Text style={s.section}>App Info</Text>
+                <Row label="App Version" value="1.0.46" />
+
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-/* ---------------- small components ---------------- */
+/* 
+=========================================
+=========== Small Components ============
+========================================= 
+*/
 
 function Row({
-                 label,
-                 value,
-                 onPress,
-             }: {
+    label,
+    value,
+    onPress,
+}: {
     label: string;
     value?: string;
     onPress?: () => void;
@@ -120,10 +163,10 @@ function Row({
 }
 
 function RowSwitch({
-                       label,
-                       value,
-                       onValueChange,
-                   }: {
+    label,
+    value,
+    onValueChange,
+}: {
     label: string;
     value: boolean;
     onValueChange: (v: boolean) => void;
@@ -138,6 +181,7 @@ function RowSwitch({
                 onValueChange={onValueChange}
                 trackColor={{ false: theme.border, true: theme.primary }}
                 thumbColor="#fff"
+                style={{ marginTop: 12 }}
             />
         </View>
     );
@@ -145,9 +189,9 @@ function RowSwitch({
 
 /** System / Light / Dark segmented control */
 function ThemeSegment({
-                          value,
-                          onChange,
-                      }: {
+    value,
+    onChange,
+}: {
     value: Preference;
     onChange: (p: Preference) => Promise<void> | void;
 }) {
@@ -156,8 +200,8 @@ function ThemeSegment({
 
     const options: { key: Preference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
         { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
-        { key: 'light',  label: 'Light',  icon: 'sunny-outline' },
-        { key: 'dark',   label: 'Dark',   icon: 'moon-outline' },
+        { key: 'light', label: 'Light', icon: 'sunny-outline' },
+        { key: 'dark', label: 'Dark', icon: 'moon-outline' },
     ];
 
     return (
@@ -218,21 +262,25 @@ const makeStyles = (t: any) =>
             paddingHorizontal: 16,
             height: 52,
             backgroundColor: t.card,
+            borderRadius: 10,
+            marginVertical: 6,
+            marginHorizontal: 6,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottomColor: t.border,
-            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: t.border,
         },
+
         label: { fontSize: 16, fontWeight: '600', color: t.text },
         right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
         value: { fontSize: 16, color: t.primary, fontWeight: '600' },
 
         group: {
-            marginHorizontal: 16,
+            marginHorizontal: 6,
             marginTop: 8,
             backgroundColor: t.card,
-            borderRadius: 12,
+            borderRadius: 10,
             padding: 12,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
