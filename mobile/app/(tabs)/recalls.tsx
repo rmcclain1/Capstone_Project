@@ -1,5 +1,4 @@
-// app/recalls/index.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -10,10 +9,14 @@ import {
     TextInput,
     Pressable,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme_provider';
+
+// pulls FDA events from the backend
+import { fetchFoodEvents, type FoodEvent } from '../../lib/recalls';
 
 type Recall = {
     id: string;
@@ -22,32 +25,33 @@ type Recall = {
     image: string;
 };
 
-const DATA: Recall[] = [
-    {
-        id: 'r1',
-        title: 'Spinach Recall',
-        issuer: 'FDA',
-        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80',
-    },
-    {
-        id: 'r2',
-        title: 'Ground Beef Recall',
-        issuer: 'USDA',
-        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=80',
-    },
-    {
-        id: 'r3',
-        title: 'Peanut Butter Recall',
-        issuer: 'FDA',
-        image: 'https://images.unsplash.com/photo-1505575972945-270b6aebc74b?w=200&q=80',
-    },
-    {
-        id: 'r4',
-        title: 'Chicken Recall',
-        issuer: 'USDA',
-        image: 'https://images.unsplash.com/photo-1548946526-f69e2424cf45?w=200&q=80',
-    },
-];
+// quick thumbnail picker so cards aren’t empty
+const pickImageFor = (desc?: string) => {
+    const d = (desc || '').toLowerCase();
+    if (d.includes('spinach') || d.includes('leaf')) {
+        return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80';
+    }
+    if (d.includes('beef')) {
+        return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=80';
+    }
+    if (d.includes('peanut')) {
+        return 'https://images.unsplash.com/photo-1505575972945-270b6aebc74b?w=200&q=80';
+    }
+    if (d.includes('chicken') || d.includes('poultry')) {
+        return 'https://images.unsplash.com/photo-1548946526-f69e2424cf45?w=200&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1584395630827-860eee694d7b?w=200&q=80';
+};
+
+// debounce so we don’t spam the API while typing
+function useDebounced<T>(value: T, delayMs: number) {
+    const [v, setV] = useState(value);
+    useEffect(() => {
+        const t = setTimeout(() => setV(value), delayMs);
+        return () => clearTimeout(t);
+    }, [value, delayMs]);
+    return v;
+}
 
 export default function RecallsScreen() {
     const router = useRouter();
@@ -55,20 +59,63 @@ export default function RecallsScreen() {
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     const [q, setQ] = useState('');
+    const debouncedQ = useDebounced(q, 300);
 
+    const [loading, setLoading] = useState(false);
+    const [items, setItems] = useState<Recall[]>([]);
+    const mounted = useRef(true);
+
+    // map backend row → card props
+    const toRecall = (fe: FoodEvent): Recall => ({
+        id: String(fe.id),
+        title: fe.product_description || 'Recall',
+        issuer: 'FDA',
+        image: pickImageFor(fe.product_description ?? ''),
+    });
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+
+    // fetch when the debounced query changes
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            setLoading(true);
+            try {
+                const { data } = await fetchFoodEvents({
+                    q: debouncedQ || undefined,
+                    per: 25,
+                });
+                if (!cancelled && mounted.current) {
+                    setItems((data || []).map(toRecall));
+                }
+            } catch {
+                if (!cancelled && mounted.current) setItems([]);
+            } finally {
+                if (!cancelled && mounted.current) setLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [debouncedQ]);
+
+    // keep local filter too
     const results = useMemo(() => {
         const term = q.trim().toLowerCase();
-        if (!term) return DATA;
-        return DATA.filter(
-            r =>
-                r.title.toLowerCase().includes(term) ||
-                r.issuer.toLowerCase().includes(term),
+        if (!term) return items;
+        return items.filter(
+            r => r.title.toLowerCase().includes(term) || r.issuer.toLowerCase().includes(term),
         );
-    }, [q]);
+    }, [q, items]);
 
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
-            {/* Header */}
+            {/* header */}
             <View style={s.header}>
                 <Pressable hitSlop={12} onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={26} color={theme.text} />
@@ -77,7 +124,7 @@ export default function RecallsScreen() {
                 <View style={{ width: 26 }} />
             </View>
 
-            {/* Search */}
+            {/* search */}
             <View style={s.searchWrap}>
                 <Ionicons name="search" size={18} color={theme.textDim} style={{ marginRight: 8 }} />
                 <TextInput
@@ -91,7 +138,14 @@ export default function RecallsScreen() {
                 />
             </View>
 
-            {/* List */}
+            {/* light loading hint under search */}
+            {loading ? (
+                <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+                    <ActivityIndicator />
+                </View>
+            ) : null}
+
+            {/* list */}
             <FlatList
                 data={results}
                 keyExtractor={it => it.id}
@@ -105,19 +159,33 @@ export default function RecallsScreen() {
                         onPress={() =>
                             router.push({
                                 pathname: '/recalls/[id]',
-                                params: { id: item.id, title: item.title, issuer: item.issuer, image: item.image },
+                                params: {
+                                    id: item.id,
+                                    title: item.title,
+                                    issuer: item.issuer,
+                                    image: item.image,
+                                },
                             })
                         }
                     >
                         <Image source={{ uri: item.image }} style={s.thumb} />
                         <View style={{ flex: 1 }}>
-                            <Text style={s.title} numberOfLines={1}>{item.title}</Text>
+                            <Text style={s.title} numberOfLines={1}>
+                                {item.title}
+                            </Text>
                             <Text style={s.issuer}>Issued by {item.issuer}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color={theme.textDim} />
                     </Pressable>
                 )}
                 showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    !loading ? (
+                        <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+                            <Text style={{ color: theme.textDim }}>No recalls found.</Text>
+                        </View>
+                    ) : null
+                }
             />
         </SafeAreaView>
     );

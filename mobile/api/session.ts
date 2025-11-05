@@ -1,5 +1,10 @@
-import { setToken as saveRailsJwt, getToken as readRailsJwt, clearToken as wipeRailsJwt } from '@/lib/tokenStorage';
-import { getApiRoot } from '@/lib/env';
+// mobile/lib/session.ts
+import {
+    setToken as saveRailsJwt,
+    getToken as readRailsJwt,
+    clearToken as wipeRailsJwt,
+} from '../lib/tokenStorage';
+import { getApiRoot } from '../lib/env';
 
 export type RailsSessionResponse = {
     ok: boolean;
@@ -15,6 +20,7 @@ function buildApiUrl(path: string) {
     return `${base}${p}`;
 }
 
+// Sends Firebase ID token in Authorization, expects Rails to return its own JWT in { token }
 export async function postToRails(firebaseIdToken: string): Promise<RailsSessionResponse> {
     const url = buildApiUrl('/api/v1/sessions');
     const res = await fetch(url, {
@@ -22,7 +28,7 @@ export async function postToRails(firebaseIdToken: string): Promise<RailsSession
         headers: { Authorization: `Bearer ${firebaseIdToken}` },
     });
     const json = await res.json().catch(() => ({}));
-    if (res.ok && json?.token) await saveRailsJwt(json.token); // <-- save using your storage
+    if (res.ok && json?.token) await saveRailsJwt(json.token);
     return { ok: !!json?.token, token: json?.token, user: json?.user, error: json?.error, status: res.status };
 }
 
@@ -34,7 +40,7 @@ export async function clearRailsJwt(): Promise<void> {
     await wipeRailsJwt();
 }
 
-// If you still use fetch anywhere instead of axios:
+// Convenience wrapper if you still sometimes use fetch()
 export async function authedFetch(pathOrUrl: string, init: RequestInit = {}) {
     const token = await readRailsJwt();
     if (!token) throw new Error('Not authenticated (missing Rails JWT)');
