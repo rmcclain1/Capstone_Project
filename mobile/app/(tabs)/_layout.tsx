@@ -58,6 +58,16 @@ export default function Layout() {
                 }}
             />
             <Tabs.Screen
+                name="ai"
+                options={{
+                    title: 'AI',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Tabs.Screen
                 name="notifications"
                 options={{
                     title: 'Notifications',
