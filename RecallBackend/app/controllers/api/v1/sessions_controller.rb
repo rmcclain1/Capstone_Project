@@ -2,7 +2,7 @@ class Api::V1::SessionsController < ApplicationController
   # Clients hit this WITHOUT a Rails JWT (they only have a Firebase ID token)
   skip_before_action :authorize_request, only: [:create, :me]
 
-  include AuthenticateFirebase  # <<— see concern below
+  include AuthenticateFirebase
 
   # POST /api/v1/sessions
   # Expect: Authorization: Bearer <FIREBASE_ID_TOKEN>
@@ -31,6 +31,8 @@ class Api::V1::SessionsController < ApplicationController
     token = JsonWebToken.encode(user_id: user.id)
     render json: { ok: true, token: token, user: user_payload(user) }, status: :ok
   rescue => e
+    # Log the real cause so 401s aren’t silent
+    Rails.logger.error("[sessions#create] #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}")
     render json: { ok: false, error: e.message }, status: :unauthorized
   end
 
@@ -47,18 +49,21 @@ class Api::V1::SessionsController < ApplicationController
 
   private
 
+  # Make this tolerant of missing columns/attrs so it never crashes
   def user_payload(u)
     {
       id: u.id,
-      email: u.email,
-      username: u.username, # keep if you still store a display handle
-      first_name: u.first_name,
-      last_name: u.last_name,
-      name: [u.first_name, u.last_name].compact.join(' ').presence,
-      avatar_url: u.avatar_url,
-      provider: u.provider,
-      firebase_uid: u.firebase_uid,
-      state: u.location
+      email: u.try(:email),
+      username: u.try(:username),
+      first_name: u.try(:first_name),
+      last_name: u.try(:last_name),
+      name: [u.try(:first_name), u.try(:last_name)].compact.join(' ').presence,
+      avatar_url: u.try(:avatar_url),
+      provider: u.try(:provider),
+      firebase_uid: u.try(:firebase_uid),
+
+      # If you don't have a `location` column, this will just be nil instead of raising.
+      state: u.try(:location)
     }
   end
 end

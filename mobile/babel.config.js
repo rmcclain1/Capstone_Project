@@ -9,7 +9,7 @@ module.exports = function (api) {
                 alias: { '@': './' },
                 extensions: ['.tsx', '.ts', '.js', '.json']
             }],
-            'react-native-reanimated/plugin', // MUST be last
+            'react-native-worklets/plugin', // MUST be last
         ],
     };
 };

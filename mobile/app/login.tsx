@@ -1,16 +1,7 @@
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
-    KeyboardAvoidingView,
-    Platform,
-    View,
-    Text,
-    TextInput,
-    StyleSheet,
-    TouchableOpacity,
-    ActivityIndicator,
-    ScrollView,
-    Alert,
+    SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TextInput,
+    StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert,
 } from 'react-native';
 import { useAuth } from "@/app/context/auth_context";
 import { useRouter } from "expo-router";
@@ -28,7 +19,7 @@ export default function LoginScreen() {
     const handleLogin = async () => {
         setLoading(true);
         try {
-            await login(username, password); // now: Firebase email/password -> Rails exchange
+            await login(username, password);
             router.replace('/(tabs)');
         } catch (e: any) {
             Alert.alert('Login Failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
@@ -40,12 +31,9 @@ export default function LoginScreen() {
     const handleGoogle = async () => {
         try {
             setLoadingGoogle(true);
-            const res = await loginWithGoogle(); // Firebase Google -> Rails exchange
-            if (res?.ok) {
-                router.replace('/(tabs)');
-            } else {
-                Alert.alert('Google Sign-In', 'Could not authenticate with Google.');
-            }
+            const res = await loginWithGoogle();
+            if (res?.ok) router.replace('/(tabs)');
+            else Alert.alert('Google Sign-In', 'Could not authenticate with Google.');
         } catch (e: any) {
             Alert.alert('Google Sign-In Failed', e?.message ?? 'Unknown error');
         } finally {
@@ -58,14 +46,10 @@ export default function LoginScreen() {
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: 'padding', android: undefined })}>
                 <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                     <View style={{ height: 24 }} />
-
                     <Text style={styles.appName}>Recall App</Text>
-
                     <View style={{ height: 24 }} />
-
                     <Text style={styles.h2}>Welcome back</Text>
                     <Text style={styles.sub}>Log in to continue</Text>
-
                     <View style={{ height: 16 }} />
 
                     <TextInput
@@ -135,6 +119,7 @@ export default function LoginScreen() {
     );
 }
 
+// styles unchanged from your file
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: '#fff' },
     container: { paddingHorizontal: 24, paddingTop: 8, alignItems: 'stretch' },

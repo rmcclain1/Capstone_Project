@@ -1,41 +1,25 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { signupWithEmailPassword } from '@/api/auth'; // NEW: Firebase email/password -> Rails exchange
+import { signupWithEmailPassword } from '@/api/auth';
 
 export default function SignUp() {
-    const [username, setUsername] = useState(''); // optional display handle; not needed for Firebase auth
+    const [username, setUsername] = useState(''); // optional display handle (Rails-side only)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
 
     const onSubmit = async () => {
-        if (!email || !password || !confirm) {
-            Alert.alert('Missing info', 'Please fill in all fields.');
-            return;
-        }
-        if (!/^\S+@\S+\.\S+$/.test(email)) {
-            Alert.alert('Invalid email', 'Please enter a valid email.');
-            return;
-        }
-        if (password.length < 8) {
-            Alert.alert('Weak password', 'Use at least 8 characters.');
-            return;
-        }
-        if (password !== confirm) {
-            Alert.alert('Mismatch', 'Passwords do not match.');
-            return;
-        }
+        if (!email || !password || !confirm) return Alert.alert('Missing info', 'Please fill in all fields.');
+        if (!/^\S+@\S+\.\S+$/.test(email)) return Alert.alert('Invalid email', 'Please enter a valid email.');
+        if (password.length < 8) return Alert.alert('Weak password', 'Use at least 8 characters.');
+        if (password !== confirm) return Alert.alert('Mismatch', 'Passwords do not match.');
+
         try {
             setLoading(true);
-            // Create Firebase account, then exchange Firebase ID token for Rails JWT and store it
             const res = await signupWithEmailPassword(email, password);
             if (!res?.ok) throw new Error('Signup failed');
-
-            // (Optional) If you want to persist `username` as a display handle on Rails,
-            // you can PATCH /api/v1/users/:id after calling /me. Skipping here to keep styling/flow unchanged.
-
             Alert.alert('Success', 'Account created! Please log in.');
             router.replace('/login');
         } catch (e: any) {

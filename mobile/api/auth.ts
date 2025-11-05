@@ -1,6 +1,11 @@
 // mobile/api/auth.ts
 import { signInWithGoogleAndGetFirebaseIdToken } from '@/lib/google';
-import { firebaseSignInWithEmail, firebaseSignUpWithEmail, firebaseSendReset, firebaseUpdatePassword } from '@/lib/emailPassword';
+import {
+  firebaseSignInWithEmail,
+  firebaseSignUpWithEmail,
+  firebaseSendReset,
+  firebaseUpdatePassword,
+} from '@/lib/emailPassword';
 import { postToRails, clearRailsJwt, getRailsJwt } from '@/api/session';
 
 export async function loginWithGoogle(): Promise<{ ok: boolean; user?: Record<string, any> }> {
@@ -34,6 +39,7 @@ export async function changePassword(newPassword: string) {
 export async function getSessionToken(): Promise<string | null> {
   return await getRailsJwt();
 }
+
 export async function logout(): Promise<void> {
   await clearRailsJwt();
 }
