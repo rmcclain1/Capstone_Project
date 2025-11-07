@@ -1,9 +1,10 @@
-import React from 'react';
 import 'react-native-gesture-handler';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { AuthProvider } from '@/app/context/auth_context';
 import { ThemeProvider, useTheme } from '@/constants/theme_provider';
 import { View } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { useEffect } from 'react';
 
 function ThemedStack() {
     const { theme } = useTheme();
@@ -39,6 +40,18 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
+    useEffect(() => {
+        const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+            const data = response.notification.request.content.data as any;
+            if (data?.screen === 'pantry') {
+                router.push('/pantry');
+            } else if (data?.screen === 'recalls') {
+                router.push('/recalls');
+            }
+        });
+
+        return () => sub.remove();
+    }, []);
     return (
         <AuthProvider>
             <ThemeProvider>
