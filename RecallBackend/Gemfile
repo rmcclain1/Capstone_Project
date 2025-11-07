@@ -21,6 +21,9 @@ gem "solid_queue"
 gem "solid_cable"
 gem 'rubyzip', '~> 2.3'
 
+# This will be used to call the food event importer daily, keeping the recall database updated every day.
+gem 'rufus-scheduler'
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
