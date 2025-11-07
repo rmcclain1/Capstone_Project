@@ -32,3 +32,15 @@ mobile/
 
 
 ********* Always run npm install after pulling new changes.**********
+
+RecallBackend:
+
+when editing the gem file make sure to run to ensure necessary dependencies are resolved
+bundle install 
+
+after run
+rails db:migrate 
+to ensure the database tables and info are being built
+
+then rails s
+
