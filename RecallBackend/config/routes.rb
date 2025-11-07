@@ -9,6 +9,12 @@ Rails.application.routes.draw do
           post 'chat'
         end
       end
+      resources :barcodes, only: [] do
+        collection { post :lookup }
+      end
+
+      resources :receipts, only: [:create, :show]
+      
 
       # Firebase ID token -> Rails JWT exchange + session endpoints
       post   '/sessions', to: 'sessions#create'

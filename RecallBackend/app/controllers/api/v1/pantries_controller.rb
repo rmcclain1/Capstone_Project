@@ -48,7 +48,7 @@ class Api::V1::PantriesController < ApplicationController
     @pantry = Pantry.find(params[:id])
   end
 
-  # Allow only columns that actually exist (now includes image_url)
+  # Allow only columns that actually exist 
   def pantry_params
     allowed = %i[
       user_id item_name expiration_date bestby_date manufacturer

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_24_160000) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_07_250000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,12 +57,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_24_160000) do
     t.datetime "updated_at", null: false
     t.integer "quantity"
     t.string "image_url"
+    t.string "source"
     t.index ["bestby_date"], name: "index_pantries_on_bestby_date"
     t.index ["created_at"], name: "index_pantries_on_created_at"
     t.index ["expiration_date"], name: "index_pantries_on_expiration_date"
     t.index ["user_id", "category"], name: "index_pantries_on_user_id_and_category"
     t.index ["user_id", "expired"], name: "index_pantries_on_user_id_and_expired"
     t.index ["user_id", "item_name"], name: "index_pantries_on_user_id_and_item_name"
+    t.index ["user_id"], name: "index_pantries_on_user_id"
+  end
+
+  create_table "receipt_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "user_id"
+    t.string "status", default: "processing", null: false
+    t.string "vendor"
+    t.datetime "purchased_at"
+    t.integer "total_cents"
+    t.jsonb "items", default: []
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_receipt_uploads_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
