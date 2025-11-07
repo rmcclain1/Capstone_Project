@@ -7,7 +7,8 @@
     "icon": "./assets/images/icon.png",
     "scheme": "recallapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -15,6 +16,7 @@
         "NSPhotoLibraryUsageDescription": "We allow choosing a receipt image from your library.",
         "NSPhotoLibraryAddUsageDescription": "We may save receipt photos if you choose to."
       }
+     
     },
     "android": {
       "adaptiveIcon": {
@@ -25,11 +27,27 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.recallapp",
       "permissions": [
+       
         "android.permission.RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO"
+       
+        "android.permission.READ_MEDIA_IMAGES"
       ],
-      "package": "com.anonymous.recallapp"
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "recallapp"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",
@@ -52,10 +70,16 @@
       "expo-font",
       "expo-web-browser",
       "expo-image-picker"
+     
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+    
+      "reactCompiler": false
+    },
+    "extra": {
+      
+      "EXPO_PUBLIC_API_URL": "http://192.168.1.123:3000"
     }
   }
 }

@@ -21,8 +21,10 @@
       ]
     },
     "types": [
-      "node"
-    ]
+      "node",
+      "react" 
+    ],
+    "resolveJsonModule": true 
   },
   "include": [
     "**/*.ts",

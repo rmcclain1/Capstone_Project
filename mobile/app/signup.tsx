@@ -1,5 +1,6 @@
+// mobile/app/signup.tsx
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { signupWithEmailPassword } from '@/api/auth';
 
@@ -9,21 +10,41 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const validateEmail = (s: string) => /^\S+@\S+\.\S+$/.test(s);
 
     const onSubmit = async () => {
-        if (!email || !password || !confirm) return Alert.alert('Missing info', 'Please fill in all fields.');
-        if (!/^\S+@\S+\.\S+$/.test(email)) return Alert.alert('Invalid email', 'Please enter a valid email.');
-        if (password.length < 8) return Alert.alert('Weak password', 'Use at least 8 characters.');
-        if (password !== confirm) return Alert.alert('Mismatch', 'Passwords do not match.');
+        setError(null);
+
+        if (!email || !password || !confirm) {
+            setError('Please fill in all fields.');
+            return;
+        }
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address.');
+            return;
+        }
+        if (password.length < 8) {
+            setError('Use at least 8 characters for your password.');
+            return;
+        }
+        if (password !== confirm) {
+            setError('Passwords do not match.');
+            return;
+        }
 
         try {
             setLoading(true);
             const res = await signupWithEmailPassword(email, password);
-            if (!res?.ok) throw new Error('Signup failed');
-            Alert.alert('Success', 'Account created! Please log in.');
+            if (!res?.ok) {
+                const reason = (res as any)?.reason || 'Sign up failed. Please try again.';
+                setError(reason);
+                return;
+            }
             router.replace('/login');
         } catch (e: any) {
-            Alert.alert('Sign up failed', String(e?.message ?? e));
+            setError(e?.message || 'Sign up failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -33,13 +54,53 @@ export default function SignUp() {
         <SafeAreaView style={styles.safe}>
             <View style={styles.container}>
                 <Text style={styles.title}>Create your account</Text>
-                <TextInput style={styles.input} placeholder="Username" autoCapitalize="none" value={username} onChangeText={setUsername} />
-                <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-                <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-                <TextInput style={styles.input} placeholder="Confirm password" secureTextEntry value={confirm} onChangeText={setConfirm} />
 
-                <TouchableOpacity style={styles.cta} onPress={onSubmit} disabled={loading}>
-                    <Text style={styles.ctaText}>{loading ? 'Creating...' : 'Sign up'}</Text>
+                {error ? (
+                    <View style={styles.errorBox}>
+                        <Text style={styles.error}>{error}</Text>
+                    </View>
+                ) : null}
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Username"
+                    autoCapitalize="none"
+                    value={username}
+                    onChangeText={setUsername}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={setEmail}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Password (min 8 chars)"
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Confirm password"
+                    secureTextEntry
+                    value={confirm}
+                    onChangeText={setConfirm}
+                />
+
+                <Text style={styles.legal}>
+                    By creating an account you agree to our{' '}
+                    <Text style={styles.signupLink} onPress={() => router.push('/TermsOfService')}>
+                        Terms of Service
+                    </Text>
+                    .
+                </Text>
+
+                <TouchableOpacity style={[styles.cta, loading && { opacity: 0.6 }]} onPress={onSubmit} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>Sign up</Text>}
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginTop: 16 }}>
@@ -61,4 +122,15 @@ const styles = StyleSheet.create({
     ctaText: { color: 'white', fontSize: 16, fontWeight: '700' },
     signupText: { textAlign: 'center', fontSize: 14, color: '#6B7280' },
     signupLink: { fontWeight: '700', color: '#111827' },
+
+   
+    errorBox: {
+        padding: 10,
+        borderRadius: 10,
+        backgroundColor: '#FEE2E2',
+        borderWidth: 1,
+        borderColor: '#FCA5A5',
+    },
+    error: { color: '#991B1B' },
+    legal: { textAlign: 'center', color: '#6B7280', fontSize: 12, marginTop: 4 },
 });
