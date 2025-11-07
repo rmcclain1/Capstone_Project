@@ -73,23 +73,21 @@ end
 
   private
 
+  # app/controllers/api/v1/users_controller.rb
   def permitted_update_params
-    # fields you conceptually allow:
     allowed = %i[
-      username email first_name last_name phone_number birthday location profile_picture_url allergies
+      username email first_name last_name phone_number birthday
+      location profile_picture_url allergies expo_push_token
     ]
 
-    # intersect with real columns in DB:
     existing = allowed & User.column_names.map(&:to_sym)
-
-    # permit those; handle allergy array if present:
     p = params.require(:user).permit(*existing, allergies: [])
 
-    # if birthday is a DATE column, coerce safely
     if p[:birthday].present? && User.columns_hash['birthday']&.type == :date
       p[:birthday] = Date.parse(p[:birthday]) rescue nil
     end
 
     p
   end
+
 end

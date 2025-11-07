@@ -36,8 +36,19 @@ class FoodEventImporter
   def import_json_data(data)
     events = data["results"] || []
 
+    last_date = FoodEvent.maximum(:recall_initiation_date)
+
     events.each do |event|
-    FoodEvent.create!(
+      event_date = parse_date(event["recall_initiation_date"])
+      next if last_date.present? && event_date <= last_date
+
+      next if FoodEvent.exists?(
+        recall_number: event["recall_number"],
+        recalling_firm: event["recalling_firm"],
+        product_description: event["product_description"]
+      )
+
+      FoodEvent.create!(
         event_id: event["event_id"],
         recall_number: event["recall_number"],
         status: event["status"],
@@ -56,13 +67,13 @@ class FoodEventImporter
         product_quantity: event["product_quantity"],
         reason_for_recall: event["reason_for_recall"],
         product_type: event["product_type"],
-        recall_initiation_date: parse_date(event["recall_initiation_date"]),
+        recall_initiation_date: event_date,
         center_classification_date: parse_date(event["center_classification_date"]),
         report_date: parse_date(event["report_date"]),
         code_info: event["code_info"]
-        )
-        end
+      )
     end
+  end
 
 
   def parse_date(date_str)
