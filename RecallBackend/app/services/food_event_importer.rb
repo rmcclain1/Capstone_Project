@@ -37,6 +37,10 @@ class FoodEventImporter
     events = data["results"] || []
 
     events.each do |event|
+    
+    # Skip if already imported (based on recall_number)
+    next if FoodEvent.exists?(recall_number: event["recall_number"])
+
     FoodEvent.create!(
         event_id: event["event_id"],
         recall_number: event["recall_number"],
@@ -66,7 +70,7 @@ class FoodEventImporter
 
 
   def parse_date(date_str)
-    return nil unless date_str.present?
+    return nil unless date_str.present? && date_str =~ /^\d{8}$/
     Date.strptime(date_str, "%Y%m%d") rescue nil
   end
 end
