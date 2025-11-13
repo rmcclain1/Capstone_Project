@@ -1,167 +1,136 @@
-// app/recalls/[id].tsx
-import React, { useMemo, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    Image,
-    ScrollView,
-    Pressable,
-    SafeAreaView,
-    Platform,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useTheme } from '@/constants/theme_provider';
 
 export default function RecallDetails() {
-    const { theme } = useTheme();
-    const s = useMemo(() => makeStyles(theme), [theme]);
+  const params = useLocalSearchParams() as any;
 
-    const params = useLocalSearchParams() as Record<string, string | undefined>;
+  const [recall, setRecall] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-    const {
-        title,
-        image,
-        reason = 'Reason not provided.',
-        batchLot = '—',
-        affectedDates = '—',
-        upc = '—',
-        manufacturer = '—',
-        authority = '—',
-        actions = 'Follow official instructions from the issuing authority.',
-    } = params;
+  useEffect(() => {
+    async function fetchRecall() {
+      try {
+        const res = await fetch(`http://localhost:3000/api/v1/food_events/${params.id}`);
+        const data = await res.json();
+        setRecall(data);
+      } catch (error) {
+        console.error('Error fetching recall details:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    // prefer `productName` if present, else fallback to `title`
-    const productName = params.productName || title || 'Product';
+    fetchRecall();
+  }, [params.id]);
 
-    // basic image fallback
-    const [imgUri, setImgUri] = useState(
-        image || 'https://i.pravatar.cc/300?img=15'
-    );
-
+  if (loading) {
     return (
-        <SafeAreaView style={s.safe}>
-            {/* Top bar */}
-            <View style={s.topBar}>
-                <Pressable
-                    onPress={() => router.back()}
-                    style={s.backBtn}
-                    hitSlop={12}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                >
-                    <Ionicons name="chevron-back" size={22} color={theme.text} />
-                </Pressable>
-                <Text style={s.topTitle}>Recall Details</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            <ScrollView
-                contentContainerStyle={s.content}
-                showsVerticalScrollIndicator={false}
-            >
-                <Text style={s.product}>{productName}</Text>
-
-                {/* Image */}
-                <Image
-                    source={{ uri: imgUri }}
-                    style={s.hero}
-                    onError={() =>
-                        setImgUri('https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=640&q=60')
-                    }
-                />
-
-                {/* Reason */}
-                <Text style={s.h2}>Reason for Recall</Text>
-                <Text style={s.body}>{reason}</Text>
-
-                <View style={s.card}>
-                    <Row label="Batch/Lot Numbers" value={batchLot} />
-                    <Divider />
-                    <Row label="Affected Dates" value={affectedDates} />
-                    <Divider />
-                    <Row label="UPC/Barcode" value={upc} />
-                    <Divider />
-                    <Row label="Manufacturer" value={manufacturer} />
-                    <Divider />
-                    <Row label="Issuing Authority" value={authority} />
-                </View>
-
-                <Text style={[s.h2, { marginTop: 14 }]}>What to Do</Text>
-                <Text style={s.body}>{actions}</Text>
-            </ScrollView>
-        </SafeAreaView>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#2362ff" />
+      </SafeAreaView>
     );
+  }
+
+  if (!recall) {
+    return (
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Recall not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // get the fields
+  const {
+    product_description,
+    recalling_firm,
+    reason_for_recall,
+    code_info,
+    report_date,
+    classification,
+    product_type,
+  } = recall;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <Ionicons name="chevron-back" size={22} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.topTitle}>Recall Details</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
+        <Text style={styles.product}>{product_description}</Text>
+
+        <Image
+          source={{
+            uri: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=400&q=80',
+          }}
+          style={styles.hero}
+        />
+
+        <Text style={styles.h2}>Reason for Recall</Text>
+        <Text style={styles.body}>{reason_for_recall || 'Not provided.'}</Text>
+
+        <View style={styles.card}>
+          <Row label="Manufacturer" value={recalling_firm || '—'} />
+          <Divider />
+          <Row label="Product Type" value={product_type || '—'} />
+          <Divider />
+          <Row label="Classification" value={classification || '—'} />
+          <Divider />
+          <Row label="Report Date" value={report_date || '—'} />
+          <Divider />
+          <Row label="Code Info" value={code_info || '—'} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
-function Row({ label, value }: { label: string; value?: string }) {
-    const { theme } = useTheme();
-    const rs = useMemo(() => makeRowStyles(theme), [theme]);
+function Row({ label, value }: { label: string; value: string }) {
     return (
-        <View style={rs.row}>
-            <Text style={rs.label}>{label}</Text>
-            <Text style={rs.value}>{value || '—'}</Text>
+        <View style={rowStyles.row}>
+            <Text style={rowStyles.label}>{label}</Text>
+            <Text style={rowStyles.value}>{value}</Text>
         </View>
     );
 }
-
 function Divider() {
-    const { theme } = useTheme();
-    return <View style={{ height: 1, backgroundColor: theme.border }} />;
+    return <View style={{ height: 1, backgroundColor: '#F1F5F9' }} />;
 }
 
-/* ---------------- styles ---------------- */
+const styles = StyleSheet.create({
+    topBar: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 10, paddingVertical: 10,
+    },
+    backBtn: {
+        width: 40, height: 40, borderRadius: 12, backgroundColor: '#F3F4F6',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    topTitle: { fontSize: 16, fontWeight: '800', color: '#111827' },
 
-const makeStyles = (t: any) =>
-    StyleSheet.create({
-        safe: { flex: 1, backgroundColor: t.bg },
-        content: { padding: 16, paddingBottom: 28 },
-        topBar: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 10,
-            paddingVertical: 10,
-            backgroundColor: t.bg,
-        },
-        backBtn: {
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            backgroundColor: t.inputBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.border,
-        },
-        topTitle: { fontSize: 16, fontWeight: '800', color: t.text },
+    product: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8 },
+    hero: {
+        width: '100%', height: 170, borderRadius: 14, marginBottom: 14,
+        backgroundColor: '#E5E7EB',
+    },
+    h2: { fontWeight: '800', color: '#111827', marginTop: 6, marginBottom: 6 },
+    body: { color: '#374151', lineHeight: 20 },
 
-        product: { fontSize: 22, fontWeight: '800', color: t.text, marginBottom: 8 },
-        hero: {
-            width: '100%',
-            height: 170,
-            borderRadius: 14,
-            marginBottom: 14,
-            backgroundColor: t.border,
-        },
-        h2: { fontWeight: '800', color: t.text, marginTop: 6, marginBottom: 6 },
-        body: { color: t.textDim, lineHeight: 20 },
+    card: {
+        marginTop: 12, borderRadius: 14, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFF',
+        paddingHorizontal: 12, paddingTop: 6, paddingBottom: 6,
+    },
+});
 
-        card: {
-            marginTop: 12,
-            borderRadius: 14,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.border,
-            backgroundColor: t.card,
-            paddingHorizontal: 12,
-            paddingTop: 6,
-            paddingBottom: 6,
-        },
-    });
-
-const makeRowStyles = (t: any) =>
-    StyleSheet.create({
-        row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-        label: { width: 140, color: t.textDim, fontWeight: '600', fontSize: 13 },
-        value: { flex: 1, color: t.text, fontSize: 13 },
-    });
+const rowStyles = StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+    label: { width: 140, color: '#6B7280', fontWeight: '600', fontSize: 13 },
+    value: { flex: 1, color: '#111827', fontSize: 13 },
+});

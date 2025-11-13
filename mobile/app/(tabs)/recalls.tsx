@@ -12,7 +12,7 @@ import {
     Platform,
     ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme_provider';
 
@@ -143,8 +143,18 @@ export default function RecallsScreen() {
                         onPress={() =>
                             router.push({
                                 pathname: '/recalls/[id]',
-                                params: { id: item.id, title: item.title, issuer: item.issuer, image: item.image },
-                            })
+                                params: {
+                                    id: item.id,
+                                    title: item.product_description,
+                                    image: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=200&q=80', // optional placeholder
+                                    reason: item.reason_for_recall,
+                                    manufacturer: item.recalling_firm,
+                                    authority: 'FDA',
+                                    affectedDates: item.recall_initiation_date,
+                                    batchLot: item.code_info,
+                                    upc: 'N/A',
+                                    },
+                                })
                         }
                     >
                         <Image source={require('../../assets/images/FDA_LOGO.png')} style={[s.thumb, { backgroundColor: 'white' }]} resizeMode="contain" />
