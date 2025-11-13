@@ -1,5 +1,5 @@
 // app/recalls/index.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -10,8 +10,9 @@ import {
     TextInput,
     Pressable,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme_provider';
 
@@ -55,16 +56,53 @@ export default function RecallsScreen() {
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     const [q, setQ] = useState('');
+    const [recalls, setRecalls] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchRecalls() {
+            try {
+                const res = await fetch('http://localhost:3000/api/v1/food_events');
+                const data = await res.json();
+
+                const mapped = data.map((r: any) => ({
+                    id: r.id.toString(),
+                    title: r.product_description || 'Unnamed Recall',
+                    issuer: r.recalling_firm || 'Unknown',
+                    image: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=200&q=80',
+                    reason: r.reason_for_recall,
+                    type: r.product_type,
+                    report_date: r.report_date,
+            }));
+
+            setRecalls(mapped);
+            } catch (error) {
+            console.error('Error fetching recalls:', error);
+            } finally {
+            setLoading(false);
+            }
+        }
+
+        fetchRecalls();
+    }, []);
 
     const results = useMemo(() => {
         const term = q.trim().toLowerCase();
-        if (!term) return DATA;
-        return DATA.filter(
+        if (!term) return recalls;
+        return recalls.filter(
             r =>
                 r.title.toLowerCase().includes(term) ||
                 r.issuer.toLowerCase().includes(term),
         );
-    }, [q]);
+    }, [q, recalls]);
+
+    if (loading) {
+    return (
+      <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
@@ -105,11 +143,21 @@ export default function RecallsScreen() {
                         onPress={() =>
                             router.push({
                                 pathname: '/recalls/[id]',
-                                params: { id: item.id, title: item.title, issuer: item.issuer, image: item.image },
-                            })
+                                params: {
+                                    id: item.id,
+                                    title: item.product_description,
+                                    image: 'https://images.unsplash.com/photo-1585238342023-78df9f2601e4?w=200&q=80', // optional placeholder
+                                    reason: item.reason_for_recall,
+                                    manufacturer: item.recalling_firm,
+                                    authority: 'FDA',
+                                    affectedDates: item.recall_initiation_date,
+                                    batchLot: item.code_info,
+                                    upc: 'N/A',
+                                    },
+                                })
                         }
                     >
-                        <Image source={{ uri: item.image }} style={s.thumb} />
+                        <Image source={require('../../assets/images/FDA_LOGO.png')} style={[s.thumb, { backgroundColor: 'white' }]} resizeMode="contain" />
                         <View style={{ flex: 1 }}>
                             <Text style={s.title} numberOfLines={1}>{item.title}</Text>
                             <Text style={s.issuer}>Issued by {item.issuer}</Text>
