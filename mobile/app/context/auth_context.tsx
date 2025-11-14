@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
+import { registerForPushNotificationsAsync } from '@/app/utils/notifications';
 
 type User = {
     id: number;
@@ -33,7 +34,7 @@ const USER_ID_KEY = 'userId';
 
 function getBaseUrl() {
     // Android emulator special host; iOS sim + web can use 127.0.0.1
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
+    if (Platform.OS === 'android') return 'http://192.0.0.2:3000/api/v1';
     return 'http://127.0.0.1:3000/api/v1';
 }
 const API_BASE = getBaseUrl();
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     await refreshUser();
                 }
             } catch (e) {
+                console.log(e);
             } finally {
                 setLoading(false);
             }
@@ -82,11 +84,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = useCallback(async (username: string, password: string) => {
         const { data } = await axios.post(`${API_BASE}/login`, { username, password });
         const { token: t, user } = data;
+
         await AsyncStorage.multiSet([[TOKEN_KEY, t], [USER_ID_KEY, String(user.id)]]);
         setToken(t);
         setUserId(String(user.id));
         axios.defaults.headers.common.Authorization = `Bearer ${t}`;
-        // fetch fresh user from backend
+
+        const expoPushToken = await registerForPushNotificationsAsync();
+        if (expoPushToken) {
+            try {
+                await axios.put(`${API_BASE}/users/${user.id}`, {
+                    user: { expo_push_token: expoPushToken },
+                });
+            } catch (e) {
+                console.log('Failed to save expo_push_token', e);
+            }
+        }
+
         await refreshUser();
     }, [refreshUser]);
 
