@@ -92,4 +92,14 @@ end
 
     p
   end
+
+  def user_params_for_create
+    params.require(:user).permit(
+      :username,
+      :email,
+      :password,
+      :password_confirmation
+    )
+  end
+
 end
