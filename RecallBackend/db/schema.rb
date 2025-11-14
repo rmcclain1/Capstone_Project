@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_082331) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -83,32 +83,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_043743) do
     t.string "category"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "quantity", default: 0, null: false
+    t.integer "quantity"
     t.string "image_url"
     t.index ["bestby_date"], name: "index_pantries_on_bestby_date"
     t.index ["created_at"], name: "index_pantries_on_created_at"
     t.index ["expiration_date"], name: "index_pantries_on_expiration_date"
-    t.index ["quantity"], name: "index_pantries_on_quantity"
     t.index ["user_id", "category"], name: "index_pantries_on_user_id_and_category"
     t.index ["user_id", "expired"], name: "index_pantries_on_user_id_and_expired"
     t.index ["user_id", "item_name"], name: "index_pantries_on_user_id_and_item_name"
   end
 
-  create_table "users", id: :serial, force: :cascade do |t|
-    t.string "username", limit: 255, null: false
-    t.string "password_digest", limit: 255, null: false
-    t.string "first_name", limit: 255
-    t.string "last_name", limit: 255
-    t.string "email", limit: 255, null: false
-    t.date "birthday"
-    t.bigint "phonenumber"
-    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+  create_table "users", force: :cascade do |t|
+    t.string "username"
+    t.string "first_name"
+    t.string "last_name"
+    t.string "email"
+    t.string "birthday"
+    t.bigint "phone_number"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "password_digest"
     t.string "location"
     t.string "allergies"
-
-    t.unique_constraint ["email"], name: "users_email_key"
-    t.unique_constraint ["username"], name: "users_username_key"
+    t.string "expo_push_token"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
