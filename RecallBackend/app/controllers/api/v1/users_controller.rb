@@ -76,7 +76,7 @@ end
   # app/controllers/api/v1/users_controller.rb
   def permitted_update_params
     allowed = %i[
-      username email first_name last_name phone_number birthday
+      username email first_name last_name phonenumber birthday
       location profile_picture_url allergies expo_push_token
     ]
 

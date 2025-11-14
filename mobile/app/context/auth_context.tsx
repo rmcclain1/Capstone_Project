@@ -10,7 +10,7 @@ type User = {
     email?: string;
     first_name?: string;
     last_name?: string;
-    phone_number?: string;
+    phonenumber?: string;
     birthday?: string;
     location?: string;
     profile_picture_url?: string;
