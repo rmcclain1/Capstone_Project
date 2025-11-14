@@ -6,16 +6,17 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '@/constants/theme_provider';
 
+// this represents a blueprint for what data the component expects.
 type Props = {
     visible: boolean;
     onClose: () => void;
     onSubmit?: (item: {
         name: string;
         imageUri?: string;
-        expiresAt?: string;     // MM/DD/YYYY
+        expiresAt?: string;
         manufacturer?: string;
         lotNumber?: string;
-        quantity?: string;      // send as string to let backend decide numeric vs textual
+        quantity?: string;
         country?: string;
         allergens?: string;
     }) => void;
@@ -25,10 +26,14 @@ const COUNTRIES = ['United States', 'Canada', 'Mexico', 'United Kingdom', 'Germa
 
 export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
     const { theme } = useTheme();
+
+    // this line is performing two things - memoization and dynamic styling
+    // this is used to caches results and recomputes them when 'theme' changes.
+    // 'makeStyles' generates a style object.
     const styles = useMemo(() => makeStyles(theme), [theme]);
 
     const backdrop = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(40)).current;
+    const translateY = useRef(new Animated.Value(1000)).current;
 
     const placeholder = theme?.muted ?? '#9AA3AF';
 
@@ -260,7 +265,8 @@ const makeStyles = (t: any) =>
         safe: { flex: 1, justifyContent: 'flex-end' },
         sheet: {
             flex: 1,
-            height: '92%',
+            height: '100%',
+            marginHorizontal: 10,
             backgroundColor: t.bg,
             borderRadius: 24,
             ...Platform.select({
