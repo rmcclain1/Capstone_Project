@@ -76,7 +76,7 @@ end
   def permitted_update_params
     # fields you conceptually allow:
     allowed = %i[
-      username email first_name last_name phone_number birthday location profile_picture_url allergies
+      username email first_name last_name phonenumber birthday location profile_picture_url allergies
     ]
 
     # intersect with real columns in DB:

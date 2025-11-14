@@ -132,7 +132,7 @@ export default function Profile() {
                     ...splitName(payload.name),
                     username: payload.username,
                     email: payload.email,
-                    phone_number: payload.phone,
+                    phonenumber: payload.phone,
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
                     profile_picture_url: payload.avatarUri, // <-- match modal prop name
@@ -207,7 +207,7 @@ export default function Profile() {
 
                 <Text style={s.sectionTitle}>Personal Information</Text>
                 <InfoRow label="Email" value={user.email || '—'} />
-                <InfoRow label="Phone Number" value={user.phone_number || '—'} />
+                <InfoRow label="Phone Number" value={user.phonenumber || '—'} />
                 <InfoRow label="Birthday" value={user.birthday || '—'} />
                 <InfoRow label="Location" value={user.location || '—'} />
 
@@ -227,7 +227,7 @@ export default function Profile() {
                     name: fullName,
                     username: user.username,
                     email: user.email,
-                    phone: user.phone_number,
+                    phone: user.phonenumber,
                     birthday: user.birthday,
                     location: user.location,
                     profile_picture_url: user.profile_picture_url,
