@@ -5,25 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="implemented push notifications">
-      <change afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/notifications_controller.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RecallBackend/app/models/notification.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RecallBackend/app/services/expiring_pantry_notifier.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RecallBackend/config/initializers/scheduler.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mobile/assets/images/logo.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/app/services/expo_push_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/services/expo_push_service.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/config/environments/development.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/environments/development.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/routes.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/db/schema.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/lib/pantry_notifications.rake" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/lib/pantry_notifications.rake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/api/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/api/auth.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,7 +99,7 @@
       <workItem from="1759389497143" duration="428000" />
       <workItem from="1759389933759" duration="14237000" />
       <workItem from="1762330484007" duration="17643000" />
-      <workItem from="1763532449604" duration="7657000" />
+      <workItem from="1763532449604" duration="7668000" />
     </task>
     <task id="LOCAL-00001" summary="created UI pages">
       <option name="closed" value="true" />
@@ -167,7 +149,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763101294836</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="implemented push notifications">
+      <option name="closed" value="true" />
+      <created>1763545174201</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1763545174201</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
