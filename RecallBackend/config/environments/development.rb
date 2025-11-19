@@ -12,6 +12,9 @@ Rails.application.configure do
   # Show full error reports.
   config.consider_all_requests_local = true
 
+  # Allow ngrok domains
+  config.hosts << "ungambolled-nonetheless-marcia.ngrok-free.dev"
+
   # Enable server timing.
   config.server_timing = true
 

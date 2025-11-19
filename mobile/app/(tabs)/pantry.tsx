@@ -1,6 +1,4 @@
-// app/pantry.tsx (or app/(tabs)/pantry.tsx)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -13,16 +11,13 @@ import {
     ActivityIndicator,
     RefreshControl,
     Alert,
-    Platform,
+    Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import { api } from '@/api/auth';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import { useAuth } from '@/app/context/auth_context';
-
-const BLUE = '#2362ffff';
-const BG = '#F5F3FA';
 import { useTheme } from '@/constants/theme_provider';
 
 type ApiPantry = {
@@ -50,12 +45,6 @@ type PantryItem = {
 };
 
 /* ---------------- helpers ---------------- */
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
 
 function useDebounced<T>(value: T, delay = 300) {
     const [v, setV] = useState(value);
@@ -146,17 +135,20 @@ export default function PantryScreen() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const api = useMemo(() => {
-        const inst = axios.create({ baseURL: API_BASE });
-        if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
-        return inst;
+    const apiInstance = useMemo(() => {
+        if (token) {
+            api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        } else {
+            delete api.defaults.headers.common.Authorization;
+        }
+        return api;
     }, [token]);
 
     const fetchPantry = useCallback(async () => {
         try {
             setError(null);
             setLoading(true);
-            const { data } = await api.get('/pantries');
+            const { data } = await apiInstance.get('/pantries');
             const raw: ApiPantry[] = Array.isArray(data) ? data : data?.items || [];
             const mapped = raw.map(mapToUI);
 
@@ -179,7 +171,7 @@ export default function PantryScreen() {
         } finally {
             setLoading(false);
         }
-    }, [api, dq, tab]);
+    }, [apiInstance, dq, tab]);
 
     useEffect(() => {
         fetchPantry();
@@ -236,7 +228,7 @@ export default function PantryScreen() {
                 body.pantry.image_url = form.imageUri.trim();
             }
 
-            await api.post('/pantries', body);
+            await apiInstance.post('/pantries', body);
             setAddOpen(false);
             await fetchPantry();
         } catch (e: any) {
@@ -257,20 +249,20 @@ export default function PantryScreen() {
     const deletePantry = useCallback(async (id: string) => {
         try {
             setDeletingId(id);
-            removeLocal(id); // optimistic update
-            await api.delete(`/pantries/${id}`);
+            removeLocal(id);
+            await apiInstance.delete(`/pantries/${id}`);
         } catch (e: any) {
-            await fetchPantry(); // restore truth on failure
+            await fetchPantry();
             Alert.alert('Delete failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
         } finally {
             setDeletingId(null);
         }
-    }, [api, fetchPantry, removeLocal]);
+    }, [apiInstance, fetchPantry, removeLocal]);
 
     const confirmDelete = useCallback((id: string, name: string) => {
         Alert.alert(
             'Delete item?',
-            `Are you sure you want to delete “${name}”?`,
+            `Are you sure you want to delete "${name}"?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Delete', style: 'destructive', onPress: () => deletePantry(id) },

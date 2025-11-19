@@ -3,12 +3,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View, Text, StyleSheet, Pressable, Image, ActivityIndicator,
-    ScrollView, RefreshControl, Platform
+    ScrollView, RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import {api} from '@/api/auth'
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
+import * as Notifications from 'expo-notifications';
 
 type ApiPantry = {
     id: number;
@@ -19,14 +20,7 @@ type ApiPantry = {
     updated_at?: string; // ISO
 };
 
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
-
 /* ---------------- helpers ---------------- */
-
 function parseISODate(s?: string | null): Date | null {
     if (!s) return null;
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -69,17 +63,20 @@ export default function Home() {
     const [error, setError] = useState<string | null>(null);
     const [pantry, setPantry] = useState<ApiPantry[]>([]);
 
-    const api = useMemo(() => {
-        const inst = axios.create({ baseURL: API_BASE });
-        if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
-        return inst;
+    const apiInstance = useMemo(() => {
+        if (token) {
+            api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        } else {
+            delete api.defaults.headers.common.Authorization;
+        }
+        return api;
     }, [token]);
 
     const fetchPantry = useCallback(async () => {
         try {
             setError(null);
             setLoading(true);
-            const { data } = await api.get('/pantries');
+            const { data } = await apiInstance.get('/pantries');
             const rows: ApiPantry[] = Array.isArray(data) ? data : (data?.items || []);
             setPantry(rows);
         } catch (e: any) {
@@ -88,11 +85,19 @@ export default function Home() {
         } finally {
             setLoading(false);
         }
-    }, [api]);
+    }, [apiInstance]);
 
     useEffect(() => {
         fetchPantry();
     }, [fetchPantry]);
+
+    useEffect(() => {
+        const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+            router.push('/(tabs)/notifications');
+        });
+
+        return () => sub.remove();
+    }, [router]);
 
     const onRefresh = useCallback(async () => {
         try {

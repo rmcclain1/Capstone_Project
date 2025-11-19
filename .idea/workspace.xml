@@ -4,27 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="Merge branch 'khurshed'&#10;&#10;# Conflicts:&#10;#&#9;mobile/api/auth.ts&#10;#&#9;mobile/app/(tabs)/index.tsx&#10;#&#9;mobile/app/(tabs)/pantry.tsx&#10;#&#9;mobile/app/login.tsx&#10;#&#9;mobile/app/profile.tsx&#10;#&#9;mobile/components/add-item-modal.tsx&#10;#&#9;mobile/components/edit-profile-modal.tsx">
-      <change afterPath="$PROJECT_DIR$/RecallBackend/app/services/expo_push_service.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RecallBackend/app/services/food_event_summarizer.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RecallBackend/config/initializers/food_event_importer_scheduler.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mobile/app/utils/notifications.ts" afterDir="false" />
+    <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="implemented push notifications">
+      <change afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/notifications_controller.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/app/models/notification.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/app/services/expiring_pantry_notifier.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RecallBackend/config/initializers/scheduler.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/assets/images/logo.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/Gemfile" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/Gemfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/Gemfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/food_events_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/food_events_controller.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/users_controller.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/app/services/food_event_importer.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/services/food_event_importer.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RecallBackend/config/initializers/Food_event_importer_scheduler.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/initializers/Food_event_importer_scheduler.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/models/user.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/services/expo_push_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/services/expo_push_service.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/config/environments/development.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/environments/development.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RecallBackend/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/routes.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RecallBackend/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/db/schema.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/lib/pantry_notifications.rake" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/lib/pantry_notifications.rake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/api/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/api/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/pantry.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/recalls.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/_layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/context/auth_context.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/recalls/[id].tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/constants/theme_provider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/constants/theme_provider.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,7 +77,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "notifications",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -94,6 +93,11 @@
     ]
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mobile/assets/images" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -113,6 +117,7 @@
       <workItem from="1759389497143" duration="428000" />
       <workItem from="1759389933759" duration="14237000" />
       <workItem from="1762330484007" duration="17643000" />
+      <workItem from="1763532449604" duration="7657000" />
     </task>
     <task id="LOCAL-00001" summary="created UI pages">
       <option name="closed" value="true" />
@@ -146,7 +151,23 @@
       <option name="project" value="LOCAL" />
       <updated>1762537716678</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Merge branch 'khurshed'&#10;&#10;# Conflicts:&#10;#&#9;mobile/api/auth.ts&#10;#&#9;mobile/app/(tabs)/index.tsx&#10;#&#9;mobile/app/(tabs)/pantry.tsx&#10;#&#9;mobile/app/login.tsx&#10;#&#9;mobile/app/profile.tsx&#10;#&#9;mobile/components/add-item-modal.tsx&#10;#&#9;mobile/components/edit-profile-modal.tsx">
+      <option name="closed" value="true" />
+      <created>1763097399818</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1763097399818</updated>
+    </task>
+    <task id="LOCAL-00006" summary="fixed notifications conflict and bug">
+      <option name="closed" value="true" />
+      <created>1763101294836</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1763101294836</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -158,6 +179,8 @@
     <MESSAGE value="refactored comments" />
     <MESSAGE value="fixed bug: light mode" />
     <MESSAGE value="implemented:&#10;- AI Summarizer&#10;- Backend for Push Notifications" />
-    <option name="LAST_COMMIT_MESSAGE" value="implemented:&#10;- AI Summarizer&#10;- Backend for Push Notifications" />
+    <MESSAGE value="fixed notifications conflict and bug" />
+    <MESSAGE value="implemented push notifications" />
+    <option name="LAST_COMMIT_MESSAGE" value="implemented push notifications" />
   </component>
 </project>

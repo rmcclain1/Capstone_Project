@@ -1,19 +1,18 @@
+import { Platform } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:3000/api/v1'
+function getBaseUrl() {
+    if (Platform.OS === 'android') return 'http://192.0.0.2:3000/api/v1';
+    return 'https://ungambolled-nonetheless-marcia.ngrok-free.dev/api/v1';
+}
 
-export const login = async (username: string, password: string) => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, {
-      username,
-      password,
-    });
+export const API_BASE_URL = getBaseUrl();
 
-    const { token, user } = response.data;
-    await AsyncStorage.setItem('token', token);
-    return user;
-  } catch (err: any) {
-    throw err.response?.data?.error || 'Login failed';
-  }
-};
+export const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'ngrok-skip-browser-warning': 'true',
+    },
+});
+
+export default api;

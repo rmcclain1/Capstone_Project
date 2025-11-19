@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { api } from '@/api/auth';
 
 const PURPLE = '#2362ffff';
 const BG = '#F5F3FA';
@@ -26,8 +27,7 @@ export default function RecallsScreen() {
     useEffect(() => {
         async function fetchRecalls() {
             try {
-                const res = await fetch('http://localhost:3000/api/v1/food_events');
-                const data = await res.json();
+                const { data } = await api.get('/food_events');
                 setRecalls(data);
             } catch (error) {
                 console.error('Error fetching recalls:', error);
@@ -56,7 +56,6 @@ export default function RecallsScreen() {
             </SafeAreaView>
         );
     }
-
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
             <View style={s.header}>
