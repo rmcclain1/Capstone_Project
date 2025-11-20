@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { signup } from '@/api/users';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUp() {
     const [username, setUsername] = useState('');
@@ -9,6 +10,9 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const onSubmit = async () => {
         if (!username || !email || !password || !confirm) {
@@ -47,11 +51,26 @@ export default function SignUp() {
     return (
         <SafeAreaView style={styles.safe}>
             <View style={styles.container}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/login')}>
+                    <Ionicons name="arrow-back" size={24} color="#111827" />
+                </TouchableOpacity>
                 <Text style={styles.title}>Create your account</Text>
                 <TextInput style={styles.input} placeholder="Username" autoCapitalize="none" value={username} onChangeText={setUsername} />
                 <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-                <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-                <TextInput style={styles.input} placeholder="Confirm password" secureTextEntry value={confirm} onChangeText={setConfirm} />
+                <View style={styles.passwordWrapper}>
+                    <TextInput style={styles.passwordInput} placeholder="Password" secureTextEntry={!showPassword} value={password} onChangeText={setPassword} />
+
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <Text style={styles.question}>?</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.passwordWrapper}>
+                    <TextInput style={styles.passwordInput} placeholder="Confirm password" secureTextEntry={!showConfirm} value={confirm} onChangeText={setConfirm} />
+
+                    <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
+                        <Text style={styles.question}>?</Text>
+                    </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity style={styles.cta} onPress={onSubmit} disabled={loading}>
                     <Text style={styles.ctaText}>{loading ? 'Creating...' : 'Sign up'}</Text>
@@ -85,5 +104,34 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#111827', 
     },
-
+    passwordWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+    },
+    passwordInput: {
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 16,
+    },
+    question: {
+        fontSize: 20,
+        paddingHorizontal: 6,
+        color: '#6B7280',
+        fontWeight: '700',
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    backText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111827',
+        marginLeft: 8,
+    },
 });

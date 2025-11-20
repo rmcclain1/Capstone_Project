@@ -24,6 +24,10 @@ export default function ResetPassword() {
     const { theme, preference, setPreference } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showVerifyPassword, setShowVerifyPassword] = useState(false);
+
     const API_BASE = getBaseUrl();
 
     const verifyCurrentPassword = async () => {
@@ -85,35 +89,54 @@ export default function ResetPassword() {
                 and a special character.
             </Text>
 
-            <TextInput
-                placeholder="Current password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={oldPassword}
-                onChangeText={setOldPassword}
-                style={s.input}
-            />
+            <View style={s.passwordWrapper}>
+                <TextInput
+                    placeholder="Current password"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry={!showOldPassword}
+                    textContentType="password"        
+                    value={oldPassword}
+                    onChangeText={setOldPassword}
+                    style={s.passwordInput}
+                />
+                <TouchableOpacity onPress={() => setShowOldPassword(!showOldPassword)}>
+                    <Text style={s.question}>?</Text>
+                </TouchableOpacity>
+            </View>
 
-            <TextInput
-                placeholder="New password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                style={s.input}
-            />
+            <View style={s.passwordWrapper}>
+                <TextInput
+                    placeholder="New password"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry={!showNewPassword}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    style={s.passwordInput}
+                />
+                <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
+                    <Text style={s.question}>?</Text>
+                </TouchableOpacity>
+            </View>
 
-            <TextInput
-                placeholder="Re-type new password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={verifyPassword}
-                onChangeText={setVerifyPassword}
-                style={s.input}
-            />
+            <View style={s.passwordWrapper}>
+                <TextInput
+                    placeholder="Re-type new password"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry={!showVerifyPassword}
+                    value={verifyPassword}
+                    onChangeText={setVerifyPassword}
+                    style={s.passwordInput}
+                />
+                <TouchableOpacity onPress={() => setShowVerifyPassword(!showVerifyPassword)}>
+                    <Text style={s.question}>?</Text>
+                </TouchableOpacity>
+            </View>
 
             <Text style={s.sub}>
                 Forgot password
@@ -252,6 +275,32 @@ const makeStyles = (t: any) =>
             color: t.text,
             marginBottom: 10,
             marginHorizontal: 10,
+        },
+        
+        passwordWrapper: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: '#E5E7EB',
+            borderRadius: 12,
+            paddingHorizontal: 14,
+            marginHorizontal: 10,
+            marginBottom: 10,
+            backgroundColor: t.inputBg
+        },
+
+        passwordInput: {
+            flex: 1,
+            paddingVertical: 12,
+            fontSize: 16,
+            color: t.text
+        },
+
+        question: {
+            fontSize: 20,
+            paddingHorizontal: 6,
+            color: '#6B7280',
+            fontWeight: '700',
         },
     });
 

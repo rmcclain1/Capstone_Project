@@ -2,13 +2,7 @@ class Api::V1::PantriesController < ApplicationController
   before_action :set_pantry, only: [:show, :update, :destroy]
 
   def index
-    pantries =
-      if params[:user_id].present?
-        Pantry.where(user_id: params[:user_id])
-      else
-        Pantry.all
-      end
-
+    pantries = Pantry.where(user_id: current_user.id)  # only fetch current user’s items
     render json: pantries.map { |p| pantry_json(p) }
   end
 
@@ -18,7 +12,7 @@ class Api::V1::PantriesController < ApplicationController
 
   def create
     pantry = Pantry.new(pantry_params)
-    pantry.user_id ||= current_user&.id  # force owner
+    pantry.user_id = current_user.id  # force owner
 
     if pantry.save
       render json: pantry_json(pantry), status: :created
@@ -45,7 +39,9 @@ class Api::V1::PantriesController < ApplicationController
   private
 
   def set_pantry
-    @pantry = Pantry.find(params[:id])
+    @pantry = current_user.pantries.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      render json: {error: 'Pantry not found'}, status: :not_found
   end
 
   # Allow only columns that actually exist (now includes image_url)
