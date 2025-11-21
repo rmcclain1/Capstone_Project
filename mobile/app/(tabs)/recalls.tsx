@@ -12,9 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const PURPLE = '#2362ffff';
-const BG = '#F5F3FA';
+import { useTheme } from '@/constants/theme_provider';
 
 
 export default function RecallsScreen() {
@@ -22,6 +20,9 @@ export default function RecallsScreen() {
     const [q, setQ] = useState('');
     const [recalls, setRecalls] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const { theme } = useTheme();
+    const styles = useMemo(() => s(theme), [theme]);
 
     useEffect(() => {
         async function fetchRecalls() {
@@ -51,27 +52,27 @@ export default function RecallsScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color={PURPLE} />
+            <SafeAreaView style={[styles.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
-            <View style={s.header}>
-                <Text style={s.headerTitle}>Recalls</Text>
+        <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Recalls</Text>
                 <View style={{ width: 26 }} />
             </View>
 
-            <View style={s.searchWrap}>
+            <View style={styles.searchWrap}>
                 <Ionicons name="search" size={18} color="#5F5F5F" style={{ marginRight: 8 }} />
                 <TextInput
                     value={q}
                     onChangeText={setQ}
                     placeholder="Search Recalls"
                     placeholderTextColor="#5F5F5F"
-                    style={s.searchInput}
+                    style={styles.searchInput}
                     returnKeyType="search"
                     clearButtonMode="while-editing"
                 />
@@ -81,11 +82,11 @@ export default function RecallsScreen() {
                 data={results}
                 keyExtractor={it => it.id.toString()}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-                ListHeaderComponent={<Text style={s.section}>Recent Recalls</Text>}
+                ListHeaderComponent={<Text style={styles.section}>Recent Recalls</Text>}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                 renderItem={({ item }) => (
                     <Pressable
-                        style={s.row}
+                        style={styles.row}
                         android_ripple={{ color: '#eee' }}
                         onPress={() =>
                             router.push({
@@ -107,13 +108,13 @@ export default function RecallsScreen() {
                                 uri:
                                     'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTinceT4qU-by39MTOb6iTSCedX1w_PLrds3g&s',
                             }}
-                            style={s.thumb}
+                            style={styles.thumb}
                         />
                         <View style={{ flex: 1 }}>
-                            <Text style={s.title} numberOfLines={1}>
+                            <Text style={styles.title} numberOfLines={1}>
                                 {item.product_description}
                             </Text>
-                            <Text style={s.issuer}>Issued by {item.recalling_firm}</Text>
+                            <Text style={styles.issuer}>Issued by {item.recalling_firm}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#B8AEE0" />
                     </Pressable>
@@ -124,8 +125,9 @@ export default function RecallsScreen() {
     );
 }
 
-const s = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: BG },
+const s = (theme: any) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: theme.bg },
     header: {
         height: 52,
         paddingHorizontal: 16,
@@ -133,14 +135,14 @@ const s = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1523' },
+    headerTitle: { fontSize: 18, fontWeight: '800', color: theme.text },
 
     searchWrap: {
         marginHorizontal: 16,
         marginTop: 8,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#e9e9f5ff',
+        backgroundColor: theme.inputBg,
         paddingHorizontal: 12,
         height: 44,
         borderRadius: 12,
@@ -148,7 +150,7 @@ const s = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 16,
-        color: '#1A1523',
+        color: theme.text,
     },
 
     section: {
@@ -156,18 +158,18 @@ const s = StyleSheet.create({
         marginBottom: 8,
         fontSize: 18,
         fontWeight: '800',
-        color: '#1A1523',
+        color: theme.text,
     },
 
     row: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 16,
         padding: 12,
         shadowColor: '#000',
-        shadowOpacity: 0.05,
+        shadowOpacity: theme.name === 'light' ? 0.05 : 0.15,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 4 },
         elevation: 2,
@@ -176,8 +178,8 @@ const s = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 10,
-        backgroundColor: '#EDEDED',
+        backgroundColor: theme.border,
     },
-    title: { fontSize: 16, fontWeight: '800', color: '#1A1523' },
-    issuer: { marginTop: 2, color: PURPLE, fontWeight: '700' },
+    title: { fontSize: 16, fontWeight: '800', color: theme.text },
+    issuer: { marginTop: 2, color: theme.text, fontWeight: '700' },
 });
