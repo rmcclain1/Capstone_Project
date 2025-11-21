@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="834ebf54-a281-4f3c-9ed8-623c4025ab62" name="Changes" comment="implemented push notifications">
-      <change beforePath="$PROJECT_DIR$/mobile/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/notifications_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/app/controllers/api/v1/notifications_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/config/routes.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecallBackend/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/RecallBackend/db/schema.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/(tabs)/notifications.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app/notifications/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app/notifications/[id].tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +105,7 @@
       <workItem from="1759389497143" duration="428000" />
       <workItem from="1759389933759" duration="14237000" />
       <workItem from="1762330484007" duration="17643000" />
-      <workItem from="1763532449604" duration="7668000" />
+      <workItem from="1763532449604" duration="16639000" />
     </task>
     <task id="LOCAL-00001" summary="created UI pages">
       <option name="closed" value="true" />
@@ -157,7 +163,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763545174201</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="implemented push notifications">
+      <option name="closed" value="true" />
+      <created>1763545185144</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1763545185144</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

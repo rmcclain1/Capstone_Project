@@ -92,7 +92,7 @@ export default function Home() {
     }, [fetchPantry]);
 
     useEffect(() => {
-        const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        const sub = Notifications.addNotificationResponseReceivedListener(() => {
             router.push('/(tabs)/notifications');
         });
 

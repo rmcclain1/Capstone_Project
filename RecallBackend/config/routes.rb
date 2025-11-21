@@ -13,15 +13,8 @@ Rails.application.routes.draw do
               get :ai_summary
           end
       end
-  resources :notifications, only: [:index] do
-          collection do
-            post :mark_all_as_read
-            get :unread_count
-          end
-          member do
-            patch :mark_as_read
-          end
-        end
+        resources :notifications, only: [:index, :destroy]
+
       # Login and Logout routes
       post '/login', to: 'sessions#create'
       delete '/logout', to: 'sessions#destroy' # Optional

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_19_084540) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_21_015515) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,6 +77,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_084540) do
     t.boolean "read"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "archived", default: false
+    t.index ["archived"], name: "index_notifications_on_archived"
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 

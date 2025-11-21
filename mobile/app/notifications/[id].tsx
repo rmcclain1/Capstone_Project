@@ -1,6 +1,5 @@
-// app/notifications/[id].tsx (or your route path)
-import React, { useMemo } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// app/(tabs)/notification-detail.tsx
+import React from 'react';
 import {
     View,
     Text,
@@ -8,155 +7,213 @@ import {
     Pressable,
     ScrollView,
     Alert,
-    Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/constants/theme_provider';
+import { api } from '@/api/auth';
 
-export default function NotificationDetail() {
+export default function NotificationDetailScreen() {
     const router = useRouter();
     const { theme } = useTheme();
-    const s = useMemo(() => makeStyles(theme), [theme]);
+    const params = useLocalSearchParams();
 
-    const { title, body, from, timeAgo } = useLocalSearchParams<{
-        title?: string;
-        body?: string;
-        from?: string;
-        timeAgo?: string;
-    }>();
-
-    const onDismiss = () => {
-        Alert.alert('Dismissed');
-        router.back();
+    const notification = {
+        id: Number(params.id),
+        title: params.title as string,
+        message: params.message as string,
+        created_at: params.created_at as string,
     };
 
-    const onArchive = () => {
-        Alert.alert('Archived');
-        router.back();
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffHours = Math.floor(diffMs / 3600000);
+
+        if (diffHours < 24) {
+            const hours = Math.max(1, diffHours);
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        }
+        return date.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    };
+
+    const handleDismiss = () => {
+        Alert.alert(
+            'Delete Notification',
+            'Are you sure you want to delete this notification? This cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/notifications/${notification.id}`);
+                            router.back();
+                        } catch (error) {
+                            console.error('Error deleting notification:', error);
+                            Alert.alert('Error', 'Failed to delete notification');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleArchive = async () => {
+        try {
+            router.back();
+        } catch (error) {
+            console.error('Error archiving notification:', error);
+            Alert.alert('Error', 'Failed to archive notification');
+        }
     };
 
     return (
-        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+        <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top']}>
             {/* Header */}
-            <View style={s.header}>
-                <Pressable
-                    hitSlop={12}
-                    onPress={() => router.back()}
-                    style={s.iconBtn}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                >
-                    <Ionicons name="chevron-back" size={22} color={theme.text} />
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                <Pressable onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </Pressable>
-                <Text style={s.headerTitle}>Notification</Text>
-                <View style={{ width: 26 }} />
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Notification</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={s.content}>
-                <Text style={s.title}>
-                    {title ?? 'New Recipe Alert: Spicy Chicken Tacos'}
+            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+                {/* Title */}
+                <Text style={[styles.title, { color: theme.text }]}>
+                    {notification.title}
                 </Text>
 
-                <Text style={s.body}>
-                    {body ??
-                        "Chef Isabella Rossi just shared a new recipe for Spicy Chicken Tacos. It’s a must-try for your next Taco Tuesday!"}
+                {/* Message */}
+                <Text style={[styles.message, { color: theme.text }]}>
+                    {notification.message}
                 </Text>
 
-                <Pressable
-                    onPress={() => {}}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                >
-                    <Text style={s.meta}>From: {from ?? 'Chef Isabella Rossi'}</Text>
-                </Pressable>
-
-                <Text style={s.meta}>Received: {timeAgo ?? '2 hours ago'}</Text>
+                {/* Timestamp */}
+                <View style={styles.timestampContainer}>
+                    <Ionicons name="time-outline" size={16} color={theme.textDim} />
+                    <Text style={[styles.timestamp, { color: theme.textDim }]}>
+                        Received: {formatDate(notification.created_at)}
+                    </Text>
+                </View>
             </ScrollView>
 
-            {/* Footer */}
-            <View style={s.footer}>
+            {/* Action Buttons */}
+            <View style={[styles.actions, {
+                borderTopColor: theme.border,
+                backgroundColor: theme.bg
+            }]}>
                 <Pressable
-                    style={s.ghostBtn}
-                    onPress={onDismiss}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                    style={[styles.actionButton, {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border
+                    }]}
+                    onPress={handleDismiss}
                 >
-                    <Text style={s.ghostText}>Dismiss</Text>
+                    <Text style={[styles.dismissText, { color: theme.text }]}>
+                        Dismiss
+                    </Text>
                 </Pressable>
+
                 <Pressable
-                    style={s.primaryBtn}
-                    onPress={onArchive}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.primary } : undefined}
+                    style={[styles.actionButton, styles.archiveButton, {
+                        backgroundColor: theme.primary
+                    }]}
+                    onPress={handleArchive}
                 >
-                    <Text style={s.primaryText}>Archive</Text>
+                    <Text style={styles.archiveText}>Archive</Text>
                 </Pressable>
             </View>
         </SafeAreaView>
     );
 }
 
-/* ---------------- styles ---------------- */
-
-const makeStyles = (t: any) =>
-    StyleSheet.create({
-        screen: { flex: 1, backgroundColor: t.bg },
-        header: {
-            height: 52,
-            paddingHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: t.bg,
-        },
-        iconBtn: {
-            width: 36,
-            height: 36,
-            borderRadius: 10,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: t.inputBg,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.border,
-        },
-        headerTitle: { fontSize: 18, fontWeight: '800', color: t.text },
-        content: { padding: 16, paddingBottom: 120 },
-        title: {
-            fontSize: 24,
-            fontWeight: '900',
-            color: t.text,
-            marginBottom: 12,
-        },
-        body: {
-            fontSize: 16,
-            lineHeight: 22,
-            color: t.textDim,
-            marginBottom: 18,
-        },
-        meta: {
-            color: t.primary,
-            fontWeight: '700',
-            marginTop: 6,
-        },
-        footer: {
-            margin: 24,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            gap: 12,
-        },
-        ghostBtn: {
-            flex: 1,
-            backgroundColor: t.inputBg,
-            borderRadius: 12,
-            paddingVertical: 12,
-            alignItems: 'center',
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.border,
-        },
-        ghostText: { fontWeight: '700', color: t.text },
-        primaryBtn: {
-            flex: 1,
-            backgroundColor: t.primary,
-            borderRadius: 12,
-            paddingVertical: 12,
-            alignItems: 'center',
-        },
-        primaryText: { fontWeight: '800', color: t.onPrimary ?? '#fff' },
-    });
+const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    backButton: {
+        padding: 4,
+        width: 40,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    content: {
+        flex: 1,
+    },
+    contentContainer: {
+        padding: 24,
+        paddingBottom: 100,
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: '700',
+        lineHeight: 34,
+        marginBottom: 20,
+        letterSpacing: -0.5,
+    },
+    message: {
+        fontSize: 16,
+        lineHeight: 26,
+        marginBottom: 24,
+        opacity: 0.85,
+    },
+    timestampContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingTop: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(0,0,0,0.1)',
+    },
+    timestamp: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    actions: {
+        flexDirection: 'row',
+        padding: 16,
+        gap: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    actionButton: {
+        flex: 1,
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    archiveButton: {
+        borderWidth: 0,
+    },
+    dismissText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    archiveText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+});

@@ -1,16 +1,20 @@
-// app/notifications/index.tsx
-import React, {useMemo, useEffect, useState, useCallback} from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// app/(tabs)/notifications.tsx
+import React, { useCallback, useState } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    RefreshControl,
     Pressable,
-    Platform, ActivityIndicator,
+    Platform,
+    Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { api } from '@/api/auth';
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
@@ -19,7 +23,6 @@ type Notification = {
     id: number;
     title: string;
     message: string;
-    read: boolean;
     created_at: string;
 };
 
@@ -31,7 +34,6 @@ export default function NotificationsScreen() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const s = useMemo(() => makeStyles(theme), [theme]);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -45,35 +47,41 @@ export default function NotificationsScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        if (token) {
-            fetchNotifications();
-        }
-    }, [token, fetchNotifications]);
+    // Auto-refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            if (token) {
+                fetchNotifications();
+            }
+        }, [token, fetchNotifications])
+    );
 
     const onRefresh = () => {
         setRefreshing(true);
         fetchNotifications();
     };
 
-    const markAsRead = async (id: number) => {
-        try {
-            await api.patch(`/notifications/${id}/mark_as_read`);
-            setNotifications(prev =>
-                prev.map(n => n.id === id ? { ...n, read: true } : n)
-            );
-        } catch (error) {
-            console.error('Error marking as read:', error);
-        }
-    };
-
-    const markAllAsRead = async () => {
-        try {
-            await api.post('/notifications/mark_all_as_read');
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (error) {
-            console.error('Error marking all as read:', error);
-        }
+    const handleDelete = (id: number, title: string) => {
+        Alert.alert(
+            'Delete Notification',
+            `Delete "${title}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/notifications/${id}`);
+                            setNotifications(prev => prev.filter(n => n.id !== id));
+                        } catch (error) {
+                            console.error('Error deleting notification:', error);
+                            Alert.alert('Error', 'Failed to delete notification');
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const formatDate = (dateString: string) => {
@@ -94,127 +102,203 @@ export default function NotificationsScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={[s.screen, { backgroundColor: theme.bg }]}>
-                <View>
+            <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
+                <View style={styles.centered}>
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             </SafeAreaView>
         );
     }
 
-    const unreadCount = notifications.filter(n => !n.read).length;
     return (
-        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+        <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top']}>
             {/* Header */}
-            <View style={s.header}>
-                <Pressable hitSlop={12} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={26} color={theme.text} />
-                </Pressable>
-                <Text style={s.headerTitle}>Notifications</Text>
-                <View style={{ width: 26 }} />
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Notifications</Text>
             </View>
 
             <FlatList
                 data={notifications}
-                keyExtractor={(it) => it.id.toString()}
-                contentContainerStyle={{ paddingBottom: 24 }}
+                keyExtractor={(item) => item.id.toString()}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                    />
+                }
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                        <Ionicons
+                            name="notifications-off-outline"
+                            size={64}
+                            color={theme.textDim}
+                        />
+                        <Text style={[styles.emptyText, { color: theme.textDim }]}>
+                            No notifications yet
+                        </Text>
+                        <Text style={[styles.emptySubtext, { color: theme.textDim }]}>
+                            We will notify you when something important happens
+                        </Text>
+                    </View>
+                }
+                renderItem={({ item }) => (
+                    <Pressable
+                        style={[
+                            styles.notificationCard,
+                            {
+                                backgroundColor: theme.card,
+                                borderColor: theme.border,
+                            }
+                        ]}
+                        onPress={() => {
+                            router.push({
+                                pathname: '/notifications/[id]',
+                                params: {
+                                    id: item.id,
+                                    title: item.title,
+                                    message: item.message,
+                                    created_at: item.created_at,
+                                },
+                            });
+                        }}
+                    >
+                        <View style={[
+                            styles.iconCircle,
+                            { backgroundColor: theme.primary + '20' }
+                        ]}>
+                            <Ionicons
+                                name="notifications"
+                                size={22}
+                                color={theme.primary}
+                            />
+                        </View>
+
+                        <View style={styles.notificationContent}>
+                            <Text style={[styles.notificationTitle, { color: theme.text }]}>
+                                {item.title}
+                            </Text>
+
+                            <Text
+                                style={[styles.notificationMessage, { color: theme.text }]}
+                                numberOfLines={2}
+                            >
+                                {item.message}
+                            </Text>
+
+                            <Text style={[styles.notificationTime, { color: theme.textDim }]}>
+                                {formatDate(item.created_at)}
+                            </Text>
+                        </View>
+
+                        <Pressable
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item.id, item.title);
+                            }}
+                            style={styles.deleteIconButton}
+                            hitSlop={10}
+                        >
+                            <Ionicons
+                                name="trash-outline"
+                                size={20}
+                                color={theme.danger || '#EF4444'}
+                            />
+                        </Pressable>
+                    </Pressable>
+                )}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                renderItem={({ item }) => <NotificationRow item={item} />}
-                style={s.list}
-                showsVerticalScrollIndicator={false}
             />
         </SafeAreaView>
     );
 }
 
-function NotificationRow({ item }: { item: Notification }) {
-    const router = useRouter();
-    const { theme } = useTheme();
-    const s = useMemo(() => makeStyles(theme), [theme]);
-
-    return (
-        <Pressable
-            style={s.row}
-            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-            onPress={() =>
-                router.push({
-                    pathname: '/notifications/[id]',
-                    params: {
-                        id: item.id,
-                        title: item.title,
-                        timeAgo: item.created_at,
-                        body: item.message,
-                    },
-                })
-            }
-        >
-            <Ionicons
-                name={item.read ? "notifications-outline" : "notifications"}
-                size={22}
-                color={item.read ? theme.textDim : theme.primary}
-            />
-            <View style={{ flex: 1 }}>
-                <Text style={s.title} numberOfLines={2}>
-                    {item.title}
-                </Text>
-                <Text style={s.time}>{item.message}</Text>
-            </View>
-        </Pressable>
-    );
-}
-
-const makeStyles = (t: any) =>
-    StyleSheet.create({
-        screen: {
-            flex: 1,
-            backgroundColor: t.bg,
-        },
-        header: {
-            height: 52,
-            paddingHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-        },
-        headerTitle: {
-            fontSize: 18,
-            fontWeight: '800',
-            color: t.text,
-        },
-        list: {
-            paddingHorizontal: 16,
-        },
-        row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            backgroundColor: t.card,
-            borderRadius: 18,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            shadowColor: '#000',
-            shadowOpacity: t.name === 'light' ? 0.05 : 0.18,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            ...(Platform.OS === 'android' ? { elevation: 2 } : null),
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.name === 'light' ? 'transparent' : t.border,
-        },
-        thumb: {
-            width: 56,
-            height: 56,
-            borderRadius: 12,
-            backgroundColor: t.border,
-        },
-        title: {
-            fontSize: 16,
-            fontWeight: '800',
-            color: t.text,
-        },
-        time: {
-            marginTop: 4,
-            fontSize: 14,
-            color: t.primary,
-            fontWeight: '600',
-        },
-    });
+const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    listContent: {
+        padding: 16,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyState: {
+        alignItems: 'center',
+        marginTop: 80,
+        paddingHorizontal: 40,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginTop: 16,
+    },
+    emptySubtext: {
+        fontSize: 14,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    notificationCard: {
+        flexDirection: 'row',
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
+    },
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    notificationContent: {
+        flex: 1,
+    },
+    notificationTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 6,
+    },
+    notificationMessage: {
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 8,
+        opacity: 0.8,
+    },
+    notificationTime: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    deleteIconButton: {
+        padding: 8,
+        marginLeft: 8,
+    },
+});
