@@ -1,5 +1,5 @@
 // app/index.tsx
-import { Redirect } from 'expo-router';
+import { Redirect } from "expo-router";
 import React from "react";
 
 /**
@@ -7,5 +7,5 @@ import React from "react";
  * @returns A command to redirect back to the login page
  */
 export default function Index() {
-    return <Redirect href="/login" />;
+  return <Redirect href="/login" />;
 }
