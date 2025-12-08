@@ -11,6 +11,7 @@ import {
     SafeAreaView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '@/constants/theme_provider';
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
 export default function ScanSheet({ visible, onClose }: Props) {
     const { theme } = useTheme();
     const styles = getStyles(theme);
+    const router = useRouter();
 
     const backdrop = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(40)).current;
@@ -61,38 +63,48 @@ export default function ScanSheet({ visible, onClose }: Props) {
                         <TouchableOpacity onPress={close} hitSlop={12} style={styles.iconBtn}>
                             <Ionicons name="close" size={20} color={theme.text} />
                         </TouchableOpacity>
-                        <Text style={styles.title}>Scan Barcode</Text>
+                        <Text style={styles.title}>Scan & Upload</Text>
                         <View style={styles.iconBtn} />{/* spacer */}
                     </View>
 
-                    <Text style={styles.subtitle}>Position barcode within the frame</Text>
+                    <Text style={styles.subtitle}>Choose what you want to do</Text>
 
-                    {/* Camera frame placeholder */}
+                    {/* Camera frame placeholder (kept for visual balance) */}
                     <View style={styles.frame}>
                         <View style={styles.frameBorder} />
                     </View>
 
-                    {/* Suggestion card */}
+                    {/* Suggestion card (static demo content kept) */}
                     <View style={styles.card}>
                         <View style={styles.cardRow}>
                             <View style={styles.thumb} />
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.itemTitle}>Organic Apple</Text>
-                                <Text style={styles.itemSub}>Fresh from the orchard</Text>
+                                <Text style={styles.itemTitle}>Tip</Text>
+                                <Text style={styles.itemSub}>Scan a barcode for instant match, or upload a receipt to parse items.</Text>
                             </View>
-                            <TouchableOpacity style={styles.pillBtn}>
-                                <Text style={styles.pillText}>Add</Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Actions */}
                     <View style={styles.actionsRow}>
-                        <TouchableOpacity style={styles.actionBtn}>
-                            <Text style={styles.actionText}>Flashlight</Text>
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => { close(); router.push('/scan/barcode'); }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Scan Barcode"
+                        >
+                            <Ionicons name="barcode-outline" size={18} style={{ marginRight: 6 }} color={theme.text} />
+                            <Text style={styles.actionText}>Scan Barcode</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionBtn}>
-                            <Text style={styles.actionText}>Upload from Gallery</Text>
+
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => { close(); router.push('/scan/receipt'); }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Scan or Upload Receipt"
+                        >
+                            <Ionicons name="camera-outline" size={18} style={{ marginRight: 6 }} color={theme.text} />
+                            <Text style={styles.actionText}>Scan Receipt</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -188,18 +200,6 @@ const getStyles = (theme: import('@/constants/theme').Tokens) =>
         },
         itemTitle: { fontSize: 16, fontWeight: '700', color: theme.text },
         itemSub: { fontSize: 13, color: theme.textDim, marginTop: 2 },
-
-        pillBtn: {
-            height: 36,
-            paddingHorizontal: 16,
-            borderRadius: 999,
-            backgroundColor: theme.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: theme.border,
-        },
-        pillText: { color: theme.primary, fontWeight: '700' },
 
         actionsRow: {
             flexDirection: 'row',

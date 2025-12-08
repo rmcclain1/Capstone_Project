@@ -1,16 +1,19 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '@/lib/api';
 
-const API_URL = 'http://localhost:3000/api/v1';
+export async function fetchPantryItems() {
+  const { data } = await api.get('/api/v1/pantries');
+  return data;
+}
+export async function addPantryItem(name: string, quantity: number) {
+  const { data } = await api.post('/api/v1/pantries', { name, quantity });
+  return data;
+}
 
-export const fetchPantryItems = async () => {
-  const token = await AsyncStorage.getItem('token');
-
-  const response = await axios.get(`${API_URL}/pantries`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return response.data;
-};
+export async function updatePantryItem(id: number, name: string, quantity: number) {
+  const { data } = await api.put(`/api/v1/pantries/${id}`, { name, quantity });
+  return data;
+}
+export async function deletePantryItem(id: number) {
+  const { data } = await api.delete(`/api/v1/pantries/${id}`);
+  return data;
+}

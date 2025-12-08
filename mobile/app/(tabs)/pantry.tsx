@@ -1,5 +1,6 @@
 // app/pantry.tsx (or app/(tabs)/pantry.tsx)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -13,19 +14,16 @@ import {
     RefreshControl,
     Alert,
     Platform,
-    TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
-import ItemDetailsModal from '@/components/item-details-modal';
 import { useAuth } from '@/app/context/auth_context';
 
 const BLUE = '#2362ffff';
 const BG = '#F5F3FA';
 import { useTheme } from '@/constants/theme_provider';
-import { Button } from '@react-navigation/elements';
 
 type ApiPantry = {
     id: number;
@@ -49,7 +47,6 @@ type PantryItem = {
     image?: string;
     status?: 'soon' | 'expired' | 'ok';
     expiring?: boolean;
-    expiresAt?: string;
 };
 
 /* ---------------- helpers ---------------- */
@@ -106,7 +103,6 @@ function mapToUI(i: ApiPantry): PantryItem {
         status,
         expiring: status === 'soon',
         image: i.image_url || undefined,
-        expiresAt: i.expiration_date || undefined,
     };
 }
 
@@ -147,8 +143,6 @@ export default function PantryScreen() {
 
     const [scanOpen, setScanOpen] = useState(false);
     const [addOpen, setAddOpen] = useState(false);
-    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -334,7 +328,7 @@ export default function PantryScreen() {
                 <FlatList
                     data={items}
                     keyExtractor={(it) => it.id}
-                    contentContainerStyle={{ marginTop: 12, paddingHorizontal: 16, paddingBottom: 24 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
                     ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
@@ -346,25 +340,14 @@ export default function PantryScreen() {
                             </Text>
                         </View>
                     }
-
                     renderItem={({ item }) => (
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                setSelectedItem(item);
-                                setIsDetailsOpen(true);
-                            }}
+                        <Pressable
                             style={s.row}
+                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
                         >
                             <Image
-                                source={{ uri: item.image || 'https://www.thekeepingroomnc.com/wp-content/uploads/2020/04/image-placeholder.jpg' }}
+                                source={{ uri: item.image || 'https://picsum.photos/seed/pantry/96' }}
                                 style={s.thumb}
-                            />
-
-                            <ItemDetailsModal
-                                visible={isDetailsOpen}
-                                onClose={() => setIsDetailsOpen(false)}
-                                item={selectedItem}
                             />
 
                             <View style={{ flex: 1 }}>
@@ -390,16 +373,13 @@ export default function PantryScreen() {
                                     color={deletingId === item.id ? theme.textDim : (theme.danger || '#EF4444')}
                                 />
                             </Pressable>
-
-                        </TouchableOpacity>
+                        </Pressable>
                     )}
                 />
             )}
 
             <ScanSheet visible={scanOpen} onClose={() => setScanOpen(false)} />
             <AddItemModal visible={addOpen} onClose={() => setAddOpen(false)} onSubmit={onSubmitNew} />
-            <ItemDetailsModal visible={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} />
-
         </SafeAreaView>
     );
 }
@@ -416,7 +396,6 @@ const makeStyles = (t: any) =>
             alignItems: 'center',
             justifyContent: 'space-between',
         },
-        
         headerTitle: { fontSize: 18, fontWeight: '800', color: t.text },
         add: { color: t.primary, fontWeight: '700', fontSize: 16 },
 
@@ -431,12 +410,7 @@ const makeStyles = (t: any) =>
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
         },
-
-        searchInput: { 
-            flex: 1, 
-            fontSize: 16, 
-            color: t.text 
-        },
+        searchInput: { flex: 1, fontSize: 16, color: t.text },
 
         tabs: {
             flexDirection: 'row',

@@ -21,7 +21,7 @@ type Preference = 'system' | 'light' | 'dark';
 export default function SettingsScreen() {
     const router = useRouter();
     const { logout } = useAuth();
-    const { theme, preference, setPreference } = useTheme();
+    const { theme, preference, setPreference } = useTheme(); // <-- theme + current pref
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     const [pushEnabled, setPushEnabled] = useState(false);

@@ -22,7 +22,7 @@ function pickTheme(pref: Preference, system: ColorSchemeName): Colors.Tokens {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [preference, setPref] = useState<Preference>('light');
+    const [preference, setPref] = useState<Preference>('system');
     const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(Appearance.getColorScheme());
 
     useEffect(() => {
@@ -33,11 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         (async () => {
             const saved = await AsyncStorage.getItem(KEY);
-            if (saved === 'light' || saved === 'dark' || saved === 'system') {
-                setPref(saved as Preference);
-            } else {
-                setPref('light');
-            }
+            if (saved === 'light' || saved === 'dark' || saved === 'system') setPref(saved);
         })();
     }, []);
 

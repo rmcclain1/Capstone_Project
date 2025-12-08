@@ -6,7 +6,7 @@ import {
     RefreshControl, ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import { api as axios } from '@/lib/api';
 import EditProfileModal from '@/components/edit-profile-modal';
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
@@ -132,7 +132,7 @@ export default function Profile() {
                     ...splitName(payload.name),
                     username: payload.username,
                     email: payload.email,
-                    phonenumber: payload.phone,
+                    phone_number: payload.phone,
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
                     profile_picture_url: payload.avatarUri, // <-- match modal prop name
@@ -160,10 +160,22 @@ export default function Profile() {
         }
     }, [user, token, setUser]);
 
-    if (loading || !user) {
+    if (loading) {
         return (
             <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
                 <ActivityIndicator size="large" color={theme.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    // If not loading and no user, navigate away or show a CTA
+    if (!user) {
+        return (
+            <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ color: theme.text, marginBottom: 12 }}>You’re signed out.</Text>
+                <Pressable onPress={() => router.replace('/login')} style={s.editBtn}>
+                    <Text style={s.editBtnText}>Sign in</Text>
+                </Pressable>
             </SafeAreaView>
         );
     }
@@ -207,7 +219,7 @@ export default function Profile() {
 
                 <Text style={s.sectionTitle}>Personal Information</Text>
                 <InfoRow label="Email" value={user.email || '—'} />
-                <InfoRow label="Phone Number" value={user.phonenumber || '—'} />
+                <InfoRow label="Phone Number" value={user.phone_number || '—'} />
                 <InfoRow label="Birthday" value={user.birthday || '—'} />
                 <InfoRow label="Location" value={user.location || '—'} />
 
@@ -227,7 +239,7 @@ export default function Profile() {
                     name: fullName,
                     username: user.username,
                     email: user.email,
-                    phone: user.phonenumber,
+                    phone: user.phone_number,
                     birthday: user.birthday,
                     location: user.location,
                     profile_picture_url: user.profile_picture_url,

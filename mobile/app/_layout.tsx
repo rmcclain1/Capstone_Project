@@ -1,3 +1,4 @@
+import React from 'react';
 import 'react-native-gesture-handler';
 import { Stack, router } from 'expo-router';
 import { AuthProvider } from '@/app/context/auth_context';
@@ -26,14 +27,12 @@ function ThemedStack() {
                 <Stack.Screen name="login" />
                 <Stack.Screen name="auth/reset-password" />
                 <Stack.Screen name="notifications" />
-                <Stack.Screen name="settings" />
-                <Stack.Screen name="organization" />
-                <Stack.Screen name="ai" />
+                <Stack.Screen name="profile" />
                 <Stack.Screen name="manual-entry" />
-                <Stack.Screen name="recall/[id]" />
-                <Stack.Screen name="signup" />
-                <Stack.Screen name="TermsOfService" />
-                <Stack.Screen name="Contact" />
+                <Stack.Screen name="organization" />
+                <Stack.Screen name="modal" />
+                <Stack.Screen name="recalls/[id]" />
+                <Stack.Screen name="notifications/[id]" />
             </Stack>
         </View>
     );
@@ -43,8 +42,8 @@ export default function RootLayout() {
     useEffect(() => {
         const sub = Notifications.addNotificationResponseReceivedListener((response) => {
             const data = response.notification.request.content.data as any;
-            if (data?.screen === 'pantry') {
-                router.push('/pantry');
+            if (data?.screen === 'notifications') {
+                router.push('/notifications');
             } else if (data?.screen === 'recalls') {
                 router.push('/recalls');
             }
@@ -52,6 +51,7 @@ export default function RootLayout() {
 
         return () => sub.remove();
     }, []);
+
     return (
         <AuthProvider>
             <ThemeProvider>

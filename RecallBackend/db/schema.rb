@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_082331) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_08_194439) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,34 +42,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_082331) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
-  create_table "food_events", force: :cascade do |t|
-    t.string "event_id"
-    t.string "recall_number"
-    t.string "status"
-    t.string "recalling_firm"
-    t.string "address_1"
-    t.string "address_2"
-    t.string "city"
-    t.string "state"
-    t.string "postal_code"
-    t.string "country"
-    t.string "classification"
-    t.string "voluntary_mandated"
-    t.text "initial_firm_notification"
-    t.text "distribution_pattern"
-    t.text "product_description"
-    t.string "product_quantity"
-    t.string "reason_for_recall"
-    t.string "product_type"
-    t.date "recall_initiation_date"
-    t.date "center_classification_date"
-    t.date "report_date"
-    t.string "code_info"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["event_id"], name: "index_food_events_on_event_id"
-  end
-
   create_table "pantries", force: :cascade do |t|
     t.integer "user_id"
     t.string "item_name"
@@ -85,16 +57,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_082331) do
     t.datetime "updated_at", null: false
     t.integer "quantity"
     t.string "image_url"
+    t.string "source"
     t.index ["bestby_date"], name: "index_pantries_on_bestby_date"
     t.index ["created_at"], name: "index_pantries_on_created_at"
     t.index ["expiration_date"], name: "index_pantries_on_expiration_date"
     t.index ["user_id", "category"], name: "index_pantries_on_user_id_and_category"
     t.index ["user_id", "expired"], name: "index_pantries_on_user_id_and_expired"
     t.index ["user_id", "item_name"], name: "index_pantries_on_user_id_and_item_name"
+    t.index ["user_id"], name: "index_pantries_on_user_id"
+  end
+
+  create_table "receipt_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "user_id"
+    t.string "status", default: "processing", null: false
+    t.string "vendor"
+    t.datetime "purchased_at"
+    t.integer "total_cents"
+    t.jsonb "items", default: []
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_receipt_uploads_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
     t.string "username"
+    t.string "password"
     t.string "first_name"
     t.string "last_name"
     t.string "email"
@@ -105,9 +92,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_082331) do
     t.string "password_digest"
     t.string "location"
     t.string "allergies"
-    t.string "expo_push_token"
-    t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["username"], name: "index_users_on_username", unique: true
+    t.string "firebase_uid"
+    t.string "provider"
+    t.string "avatar_url"
+    t.index ["firebase_uid"], name: "index_users_on_firebase_uid", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
