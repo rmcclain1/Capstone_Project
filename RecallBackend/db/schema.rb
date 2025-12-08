@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_08_194439) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_08_215712) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,40 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_194439) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "food_events", force: :cascade do |t|
+    t.string "event_id"
+    t.string "recall_number"
+    t.string "product_description"
+    t.string "code_info"
+    t.string "recalling_firm"
+    t.string "status"
+    t.string "classification"
+    t.string "state"
+    t.string "distribution_pattern"
+    t.date "report_date"
+    t.date "recall_initiation_date"
+    t.text "reason_for_recall"
+    t.jsonb "raw_data", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "address_1"
+    t.string "address_2"
+    t.string "city"
+    t.string "postal_code"
+    t.string "country"
+    t.string "voluntary_mandated"
+    t.string "initial_firm_notification"
+    t.string "product_quantity"
+    t.string "product_type"
+    t.date "center_classification_date"
+    t.index ["classification"], name: "index_food_events_on_classification"
+    t.index ["event_id"], name: "index_food_events_on_event_id", unique: true
+    t.index ["recall_number"], name: "index_food_events_on_recall_number"
+    t.index ["report_date"], name: "index_food_events_on_report_date"
+    t.index ["state"], name: "index_food_events_on_state"
+    t.index ["status"], name: "index_food_events_on_status"
   end
 
   create_table "pantries", force: :cascade do |t|
@@ -95,6 +129,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_194439) do
     t.string "firebase_uid"
     t.string "provider"
     t.string "avatar_url"
+    t.string "expo_push_token"
+    t.index ["expo_push_token"], name: "index_users_on_expo_push_token"
     t.index ["firebase_uid"], name: "index_users_on_firebase_uid", unique: true
   end
 
