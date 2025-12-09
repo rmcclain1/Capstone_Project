@@ -6,6 +6,7 @@ import {
     ScrollView, RefreshControl, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { api } from '@/lib/api'; // Use shared API client
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
@@ -86,9 +87,13 @@ export default function Home() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchPantry();
-    }, [fetchPantry]);
+    // Auto-refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            console.log('[Home] Screen focused, refreshing pantry...');
+            fetchPantry();
+        }, [fetchPantry])
+    );
 
     const onRefresh = useCallback(async () => {
         try {

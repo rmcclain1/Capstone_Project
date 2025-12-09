@@ -84,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.log('[Auth] Bootstrap - /me response:', res.data?.ok ? 'success' : 'failed');
 
                 if (!res.data?.ok) {
-                    // bad/expired token from Rails – clear everything
                     console.log('[Auth] Bootstrap - clearing expired token');
                     setUser(null);
                     setToken(null);
@@ -95,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
             } catch (e: any) {
                 console.log('[Auth] bootstrap error:', e?.response?.data || e.message);
-                // clear state AND wipe stored JWT
                 setUser(null);
                 setToken(null);
                 delete api.defaults.headers.common.Authorization;
@@ -122,30 +120,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error(result.reason);
             }
 
-            console.log('[Auth] Firebase auth successful, getting stored token...');
+            console.log('[Auth] Firebase auth successful, checking for token...');
+
+            // Small delay to ensure backend has processed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const stored = await getSessionToken();
             console.log('[Auth] Stored token after login:', stored ? 'exists' : 'MISSING');
 
             if (!stored) {
-                throw new Error('Token not stored after login');
+                throw new Error('Token not stored after login. Please try again.');
             }
 
             setToken(stored);
             api.defaults.headers.common.Authorization = `Bearer ${stored}`;
 
+            // Retry logic for /me endpoint
             console.log('[Auth] Fetching user data...');
-            const meRes = await api.get('/api/v1/me');
-            console.log('[Auth] /me response:', meRes.data?.ok ? 'success' : 'failed');
+            let lastError: any;
 
-            if (meRes.data?.ok) {
-                setUser(normalizeUser(meRes.data.user));
-                console.log('[Auth] Login complete, user set');
-            } else {
-                throw new Error('Failed to fetch user data');
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`[Auth] Retry ${attempt}/2 - waiting 1s...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    const meRes = await api.get('/api/v1/me');
+                    console.log('[Auth] /me response:', meRes.data?.ok ? 'success' : 'failed');
+
+                    if (meRes.data?.ok) {
+                        setUser(normalizeUser(meRes.data.user));
+                        console.log('[Auth] Login complete, user set');
+                        return; // Success!
+                    }
+                } catch (e: any) {
+                    lastError = e;
+                    console.error(`[Auth] /me attempt ${attempt + 1} failed:`, e?.response?.data || e.message);
+                }
             }
+
+            // All retries failed
+            throw lastError || new Error('Failed to fetch user data after login');
         } catch (e: any) {
             console.error('[Auth] loginWithEmail error:', e?.response?.data || e.message);
-            throw e; // Re-throw so login screen can catch it
+            // Clean up on failure
+            setUser(null);
+            setToken(null);
+            delete api.defaults.headers.common.Authorization;
+            await apiLogout();
+            throw e;
         } finally {
             setLoading(false);
         }
@@ -162,30 +186,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error(result.reason);
             }
 
-            console.log('[Auth] Google auth successful, getting stored token...');
+            console.log('[Auth] Google auth successful, checking for token...');
+
+            // Small delay to ensure backend has processed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const stored = await getSessionToken();
             console.log('[Auth] Stored token after login:', stored ? 'exists' : 'MISSING');
 
             if (!stored) {
-                throw new Error('Token not stored after login');
+                throw new Error('Token not stored after login. Please try again.');
             }
 
             setToken(stored);
             api.defaults.headers.common.Authorization = `Bearer ${stored}`;
 
+            // Retry logic for /me endpoint
             console.log('[Auth] Fetching user data...');
-            const meRes = await api.get('/api/v1/me');
-            console.log('[Auth] /me response:', meRes.data?.ok ? 'success' : 'failed');
+            let lastError: any;
 
-            if (meRes.data?.ok) {
-                setUser(normalizeUser(meRes.data.user));
-                console.log('[Auth] Google login complete, user set');
-            } else {
-                throw new Error('Failed to fetch user data');
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`[Auth] Retry ${attempt}/2 - waiting 1s...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    const meRes = await api.get('/api/v1/me');
+                    console.log('[Auth] /me response:', meRes.data?.ok ? 'success' : 'failed');
+
+                    if (meRes.data?.ok) {
+                        setUser(normalizeUser(meRes.data.user));
+                        console.log('[Auth] Google login complete, user set');
+                        return; // Success!
+                    }
+                } catch (e: any) {
+                    lastError = e;
+                    console.error(`[Auth] /me attempt ${attempt + 1} failed:`, e?.response?.data || e.message);
+                }
             }
+
+            // All retries failed
+            throw lastError || new Error('Failed to fetch user data after Google login');
         } catch (e: any) {
             console.error('[Auth] loginWithGoogleFlow error:', e?.response?.data || e.message);
-            throw e; // Re-throw so login screen can catch it
+            // Clean up on failure
+            setUser(null);
+            setToken(null);
+            delete api.defaults.headers.common.Authorization;
+            await apiLogout();
+            throw e;
         } finally {
             setLoading(false);
         }

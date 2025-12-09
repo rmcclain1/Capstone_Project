@@ -36,14 +36,21 @@ export default function SignUp() {
 
         try {
             setLoading(true);
+            console.log('[Signup] Starting signup for:', email);
             const res = await signUpWithEmailPassword(email, password);
+
             if (!res?.ok) {
                 const reason = (res as any)?.reason || 'Sign up failed. Please try again.';
+                console.error('[Signup] Failed:', reason);
                 setError(reason);
                 return;
             }
-            router.replace('/login');
+
+            console.log('[Signup] Success! User authenticated and Rails record created.');
+            // ✅ After signup, user is already authenticated - go directly to app
+            router.replace('/(tabs)');
         } catch (e: any) {
+            console.error('[Signup] Exception:', e);
             setError(e?.message || 'Sign up failed. Please try again.');
         } finally {
             setLoading(false);
@@ -63,10 +70,11 @@ export default function SignUp() {
 
                 <TextInput
                     style={styles.input}
-                    placeholder="Username"
+                    placeholder="Username (optional)"
                     autoCapitalize="none"
                     value={username}
                     onChangeText={setUsername}
+                    editable={!loading}
                 />
                 <TextInput
                     style={styles.input}
@@ -75,6 +83,7 @@ export default function SignUp() {
                     keyboardType="email-address"
                     value={email}
                     onChangeText={setEmail}
+                    editable={!loading}
                 />
                 <TextInput
                     style={styles.input}
@@ -82,6 +91,7 @@ export default function SignUp() {
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
+                    editable={!loading}
                 />
                 <TextInput
                     style={styles.input}
@@ -89,6 +99,9 @@ export default function SignUp() {
                     secureTextEntry
                     value={confirm}
                     onChangeText={setConfirm}
+                    editable={!loading}
+                    onSubmitEditing={onSubmit}
+                    returnKeyType="done"
                 />
 
                 <Text style={styles.legal}>
@@ -103,7 +116,7 @@ export default function SignUp() {
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>Sign up</Text>}
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginTop: 16 }}>
+                <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginTop: 16 }} disabled={loading}>
                     <Text style={styles.signupText}>
                         Already have an account? <Text style={styles.signupLink}>Log in</Text>
                     </Text>
@@ -122,8 +135,6 @@ const styles = StyleSheet.create({
     ctaText: { color: 'white', fontSize: 16, fontWeight: '700' },
     signupText: { textAlign: 'center', fontSize: 14, color: '#6B7280' },
     signupLink: { fontWeight: '700', color: '#111827' },
-
-   
     errorBox: {
         padding: 10,
         borderRadius: 10,

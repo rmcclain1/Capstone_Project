@@ -16,16 +16,13 @@ import {
     TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
 import ItemDetailsModal from '@/components/item-details-modal';
 import { useAuth } from '@/app/context/auth_context';
-
-const BLUE = '#2362ffff';
-const BG = '#F5F3FA';
 import { useTheme } from '@/constants/theme_provider';
-import { Button } from '@react-navigation/elements';
+import { api } from '@/lib/api'; // USE SHARED API INSTANCE
 
 type ApiPantry = {
     id: number;
@@ -53,12 +50,6 @@ type PantryItem = {
 };
 
 /* ---------------- helpers ---------------- */
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
 
 function useDebounced<T>(value: T, delay = 300) {
     const [v, setV] = useState(value);
@@ -118,6 +109,7 @@ function toISODateMaybe(mmddyyyy?: string | null) {
     const [, MM, DD, YYYY] = m;
     return `${YYYY}-${MM.padStart(2, '0')}-${DD.padStart(2, '0')}`;
 }
+
 function isExpiredFromMMDDYYYY(mmddyyyy?: string) {
     const iso = toISODateMaybe(mmddyyyy);
     if (!iso) return false;
@@ -129,10 +121,12 @@ function isExpiredFromMMDDYYYY(mmddyyyy?: string) {
     return e < t;
 }
 
+// Default placeholder for missing images
+const DEFAULT_PLACEHOLDER = 'https://via.placeholder.com/100x100.png?text=No+Image';
+
 /* ---------------- screen ---------------- */
 
 export default function PantryScreen() {
-    const { token } = useAuth();
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
@@ -152,18 +146,16 @@ export default function PantryScreen() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const api = useMemo(() => {
-        const inst = axios.create({ baseURL: API_BASE });
-        if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
-        return inst;
-    }, [token]);
-
     const fetchPantry = useCallback(async () => {
         try {
             setError(null);
             setLoading(true);
-            const { data } = await api.get('/pantries');
+            console.log('[Pantry] Fetching from /api/v1/pantries');
+
+            const { data } = await api.get('/api/v1/pantries');
             const raw: ApiPantry[] = Array.isArray(data) ? data : data?.items || [];
+            console.log('[Pantry] Fetched', raw.length, 'items');
+
             const mapped = raw.map(mapToUI);
 
             const filtered = mapped.filter((it) => {
@@ -179,17 +171,21 @@ export default function PantryScreen() {
 
             setItems(filtered);
         } catch (e: any) {
-            console.log('Fetch pantries failed:', e?.response?.data || e?.message);
+            console.error('[Pantry] Fetch error:', e?.response?.data || e?.message);
             setError(e?.response?.data?.error || e?.message || 'Failed to load pantry');
             setItems([]);
         } finally {
             setLoading(false);
         }
-    }, [api, dq, tab]);
+    }, [dq, tab]);
 
-    useEffect(() => {
-        fetchPantry();
-    }, [fetchPantry]);
+    // Auto-refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            console.log('[Pantry] Screen focused, refreshing...');
+            fetchPantry();
+        }, [fetchPantry])
+    );
 
     const onRefresh = async () => {
         try {
@@ -242,11 +238,12 @@ export default function PantryScreen() {
                 body.pantry.image_url = form.imageUri.trim();
             }
 
-            await api.post('/pantries', body);
+            console.log('[Pantry] Creating item:', body);
+            await api.post('/api/v1/pantries', body);
             setAddOpen(false);
             await fetchPantry();
         } catch (e: any) {
-            console.log('Create pantry failed:', e?.response?.data || e?.message);
+            console.error('[Pantry] Create error:', e?.response?.data || e?.message);
             Alert.alert(
                 'Add Failed',
                 e?.response?.data?.errors?.join(', ') ??
@@ -262,21 +259,25 @@ export default function PantryScreen() {
 
     const deletePantry = useCallback(async (id: string) => {
         try {
+            console.log('[Pantry] Deleting item:', id);
             setDeletingId(id);
             removeLocal(id); // optimistic update
-            await api.delete(`/pantries/${id}`);
+
+            await api.delete(`/api/v1/pantries/${id}`);
+            console.log('[Pantry] Delete successful');
         } catch (e: any) {
-            await fetchPantry(); // restore truth on failure
+            console.error('[Pantry] Delete error:', e?.response?.data || e?.message);
+            await fetchPantry(); // restore on failure
             Alert.alert('Delete failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
         } finally {
             setDeletingId(null);
         }
-    }, [api, fetchPantry, removeLocal]);
+    }, [fetchPantry, removeLocal]);
 
     const confirmDelete = useCallback((id: string, name: string) => {
         Alert.alert(
             'Delete item?',
-            `Are you sure you want to delete “${name}”?`,
+            `Are you sure you want to delete "${name}"?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Delete', style: 'destructive', onPress: () => deletePantry(id) },
@@ -330,7 +331,6 @@ export default function PantryScreen() {
                     {!!error && <Text style={{ marginTop: 10, color: theme.danger || '#B00020' }}>{error}</Text>}
                 </View>
             ) : (
-
                 <FlatList
                     data={items}
                     keyExtractor={(it) => it.id}
@@ -346,9 +346,7 @@ export default function PantryScreen() {
                             </Text>
                         </View>
                     }
-
                     renderItem={({ item }) => (
-
                         <TouchableOpacity
                             onPress={() => {
                                 setSelectedItem(item);
@@ -357,14 +355,11 @@ export default function PantryScreen() {
                             style={s.row}
                         >
                             <Image
-                                source={{ uri: item.image || 'https://www.thekeepingroomnc.com/wp-content/uploads/2020/04/image-placeholder.jpg' }}
+                                source={{ uri: item.image || DEFAULT_PLACEHOLDER }}
                                 style={s.thumb}
-                            />
-
-                            <ItemDetailsModal
-                                visible={isDetailsOpen}
-                                onClose={() => setIsDetailsOpen(false)}
-                                item={selectedItem}
+                                onError={(e) => {
+                                    console.log('[Pantry] Image load error for item:', item.id);
+                                }}
                             />
 
                             <View style={{ flex: 1 }}>
@@ -379,18 +374,20 @@ export default function PantryScreen() {
                             ) : null}
 
                             <Pressable
-                                onPress={() => confirmDelete(item.id, item.name)}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    confirmDelete(item.id, item.name);
+                                }}
                                 style={s.trashBtn}
                                 hitSlop={10}
                                 disabled={deletingId === item.id}
                             >
                                 <Ionicons
-                                    name={deletingId === item.id ? 'time-outline' : 'trash-outline'}
+                                    name={deletingId === item.id ? 'hourglass-outline' : 'trash-outline'}
                                     size={20}
                                     color={deletingId === item.id ? theme.textDim : (theme.danger || '#EF4444')}
                                 />
                             </Pressable>
-
                         </TouchableOpacity>
                     )}
                 />
@@ -398,8 +395,11 @@ export default function PantryScreen() {
 
             <ScanSheet visible={scanOpen} onClose={() => setScanOpen(false)} />
             <AddItemModal visible={addOpen} onClose={() => setAddOpen(false)} onSubmit={onSubmitNew} />
-            <ItemDetailsModal visible={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} />
-
+            <ItemDetailsModal
+                visible={isDetailsOpen}
+                onClose={() => setIsDetailsOpen(false)}
+                item={selectedItem}
+            />
         </SafeAreaView>
     );
 }
@@ -416,10 +416,8 @@ const makeStyles = (t: any) =>
             alignItems: 'center',
             justifyContent: 'space-between',
         },
-
         headerTitle: { fontSize: 18, fontWeight: '800', color: t.text },
         add: { color: t.primary, fontWeight: '700', fontSize: 16 },
-
         searchWrap: {
             margin: 16,
             flexDirection: 'row',
@@ -431,13 +429,7 @@ const makeStyles = (t: any) =>
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
         },
-
-        searchInput: {
-            flex: 1,
-            fontSize: 16,
-            color: t.text
-        },
-
+        searchInput: { flex: 1, fontSize: 16, color: t.text },
         tabs: {
             flexDirection: 'row',
             justifyContent: 'space-around',
@@ -453,7 +445,6 @@ const makeStyles = (t: any) =>
             borderRadius: 2,
             backgroundColor: t.primary,
         },
-
         row: {
             flexDirection: 'row',
             alignItems: 'center',
