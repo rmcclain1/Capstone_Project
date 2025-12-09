@@ -32,9 +32,7 @@
       [
         "expo-notifications"
       ],
-      [
-        "expo-barcode-scanner"
-      ],
+
       [
         "expo-secure-store"
       ]
