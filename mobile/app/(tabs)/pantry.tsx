@@ -340,12 +340,7 @@ export default function PantryScreen() {
                         </View>
                     }
                     renderItem={({ item }) => (
-                        <Pressable
-                            style={s.row}
-                            android_ripple={
-                                Platform.OS === 'android' ? { color: theme.border } : undefined
-                            }
-                        >
+                        <View style={s.row}>
                             <Image
                                 source={{
                                     uri: item.image || 'https://picsum.photos/seed/pantry/96',
@@ -396,7 +391,7 @@ export default function PantryScreen() {
                                     }
                                 />
                             </Pressable>
-                        </Pressable>
+                        </View>
                     )}
                 />
             )}

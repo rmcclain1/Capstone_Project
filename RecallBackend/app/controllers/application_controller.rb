@@ -22,6 +22,16 @@ class ApplicationController < ActionController::API
     render_unauthorized('Not Authorized')
   end
 
+  # Alias for authenticate_user! (used by organization controllers)
+  def authenticate_user!
+    authorize_request
+  end
+
+  # Helper to check if user is authenticated
+  def user_signed_in?
+    current_user.present?
+  end
+
   def render_unauthorized(msg)
     render json: { ok: false, error: msg }, status: :unauthorized
   end

@@ -1,346 +1,517 @@
-// mobile/app/(tabs)/notifications.tsx
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// app/(tabs)/notifications.tsx
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     FlatList,
-    Image,
     Pressable,
-    Platform,
-    ActivityIndicator,
     RefreshControl,
+    Alert,
+    Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme_provider';
-import { useAuth } from '@/app/context/auth_context';
-import { api } from '@/lib/api';
+import {
+    getNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
+    archiveNotification,
+    sendTestNotification,
+    type AppNotification,
+} from '@/api/notifications';
 
-type NotificationType = 'recall' | 'expiring' | 'expired' | 'new_recall';
-
-type Notification = {
-    id: string;
-    type: NotificationType;
-    title: string;
-    body: string;
-    timeAgo: string;
-    timestamp: string;
-    image?: string;
-    relatedId?: number;
-};
-
-// Helper to format dates
-function timeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    const weeks = Math.floor(days / 7);
-    if (weeks < 4) return `${weeks}w ago`;
-    return new Date(dateString).toLocaleDateString();
-}
-
-// Generate notifications from pantry items and recalls
-async function generateNotifications(): Promise<Notification[]> {
-    const notifications: Notification[] = [];
-
-    try {
-        // Fetch pantry items
-        const pantryRes = await api.get('/api/v1/pantries');
-        const pantryItems = Array.isArray(pantryRes.data) ? pantryRes.data : [];
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Check for expiring/expired items
-        pantryItems.forEach((item: any) => {
-            if (!item.expiration_date) return;
-
-            const expDate = new Date(item.expiration_date);
-            expDate.setHours(0, 0, 0, 0);
-            const daysUntil = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-            if (daysUntil < 0) {
-                // Expired
-                notifications.push({
-                    id: `expired-${item.id}`,
-                    type: 'expired',
-                    title: `${item.item_name} has expired`,
-                    body: `Expired ${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} ago`,
-                    timeAgo: timeAgo(item.expiration_date),
-                    timestamp: item.expiration_date,
-                    image: item.image_url || 'https://images.unsplash.com/photo-1505575972945-270b6aebc74b?w=200&q=80',
-                    relatedId: item.id,
-                });
-            } else if (daysUntil <= 7) {
-                // Expiring soon
-                notifications.push({
-                    id: `expiring-${item.id}`,
-                    type: 'expiring',
-                    title: `${item.item_name} expires soon`,
-                    body: `Expires in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}`,
-                    timeAgo: timeAgo(item.created_at || new Date().toISOString()),
-                    timestamp: item.created_at || new Date().toISOString(),
-                    image: item.image_url || 'https://images.unsplash.com/photo-1505575972945-270b6aebc74b?w=200&q=80',
-                    relatedId: item.id,
-                });
-            }
-        });
-
-        // Fetch recent recalls
-        const recallsRes = await api.get('/api/v1/food_events', { params: { per_page: 10 } });
-        const recalls = Array.isArray(recallsRes.data) ? recallsRes.data : [];
-
-        // Add recall notifications
-        recalls.slice(0, 5).forEach((recall: any, index: number) => {
-            const reportDate = recall.report_date || new Date().toISOString();
-            notifications.push({
-                id: `recall-${recall.id}`,
-                type: 'new_recall',
-                title: 'New FDA Recall',
-                body: recall.product_description || 'Check details for more information',
-                timeAgo: timeAgo(reportDate),
-                timestamp: reportDate,
-                image: 'https://images.unsplash.com/photo-1584395630827-860eee694d7b?w=200&q=80',
-                relatedId: recall.id,
-            });
-        });
-
-    } catch (error) {
-        console.error('[Notifications] Error generating:', error);
-    }
-
-    // Sort by timestamp (newest first)
-    return notifications.sort((a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-}
+type TabType = 'all' | 'unread' | 'archived';
 
 export default function NotificationsScreen() {
-    const router = useRouter();
     const { theme } = useTheme();
-    const { user } = useAuth();
-    const s = useMemo(() => makeStyles(theme), [theme]);
-
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const router = useRouter();
+    const [allNotifications, setAllNotifications] = useState<AppNotification[]>([]);
+    const [activeTab, setActiveTab] = useState<TabType>('all');
+    const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const loadNotifications = useCallback(async () => {
-        try {
-            console.log('[Notifications] Loading...');
-            const notifs = await generateNotifications();
-            console.log('[Notifications] Loaded:', notifs.length);
-            setNotifications(notifs);
-        } catch (error) {
-            console.error('[Notifications] Load error:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     useEffect(() => {
         loadNotifications();
-    }, [loadNotifications]);
+    }, []);
 
-    const onRefresh = async () => {
+    const loadNotifications = async () => {
+        try {
+            const response = await getNotifications();
+            setAllNotifications(response.notifications);
+            setUnreadCount(response.unread_count);
+        } catch (error) {
+            console.error('Failed to load notifications:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRefresh = useCallback(async () => {
         setRefreshing(true);
         await loadNotifications();
         setRefreshing(false);
-    };
+    }, []);
 
-    const getIcon = (type: NotificationType) => {
-        switch (type) {
-            case 'expired': return 'alert-circle';
-            case 'expiring': return 'warning';
-            case 'new_recall': return 'megaphone';
-            default: return 'notifications';
+    const filteredNotifications = allNotifications.filter(n => {
+        if (activeTab === 'unread') return !n.read;
+        if (activeTab === 'archived') return n.archived;
+        return !n.archived;
+    });
+
+    const handleMarkRead = async (notification: AppNotification) => {
+        if (notification.read) return;
+
+        try {
+            await markNotificationRead(notification.id);
+            setAllNotifications(prev =>
+                prev.map(n => (n.id === notification.id ? { ...n, read: true } : n))
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error('Failed to mark as read:', error);
+            Alert.alert('Error', 'Failed to mark as read');
         }
     };
 
-    const getIconColor = (type: NotificationType) => {
-        switch (type) {
-            case 'expired': return '#EF4444';
-            case 'expiring': return '#F59E0B';
-            case 'new_recall': return theme.primary;
-            default: return theme.primary;
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllNotificationsRead();
+            setAllNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            setUnreadCount(0);
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+            Alert.alert('Error', 'Failed to mark all as read');
         }
     };
+
+    const handleDismiss = async (id: string) => {
+        try {
+            await markNotificationRead(id);
+            setAllNotifications(prev =>
+                prev.map(n => (n.id === id ? { ...n, read: true } : n))
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error('Failed to dismiss:', error);
+            Alert.alert('Error', 'Failed to dismiss notification');
+        }
+    };
+
+    const handleArchive = async (id: string) => {
+        try {
+            await archiveNotification(id);
+            setAllNotifications(prev =>
+                prev.map(n => (n.id === id ? { ...n, archived: true } : n))
+            );
+        } catch (error) {
+            console.error('Failed to archive:', error);
+            Alert.alert('Error', 'Failed to archive notification');
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        Alert.alert(
+            'Delete Notification',
+            'This notification will be permanently deleted.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteNotification(id);
+                            setAllNotifications(prev => prev.filter(n => n.id !== id));
+                        } catch (error) {
+                            console.error('Failed to delete:', error);
+                            Alert.alert('Error', 'Failed to delete notification');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleNotificationPress = (notification: AppNotification) => {
+        handleMarkRead(notification);
+
+        if (notification.pantry_item) {
+            router.push(`/pantry/${notification.pantry_item.id}` as any);
+        }
+    };
+
+    const getNotificationIcon = (type: string) => {
+        switch (type) {
+            case 'expiring_soon': return 'time-outline';
+            case 'expiring_today': return 'alert-circle-outline';
+            case 'expired': return 'close-circle-outline';
+            case 'low_stock': return 'trending-down-outline';
+            default: return 'notifications-outline';
+        }
+    };
+
+    const getNotificationColor = (type: string) => {
+        switch (type) {
+            case 'expiring_soon': return '#F59E0B';
+            case 'expiring_today': return '#EF4444';
+            case 'expired': return '#DC2626';
+            case 'low_stock': return '#3B82F6';
+            default: return theme.textDim;
+        }
+    };
+
+    const renderNotification = ({ item }: { item: AppNotification }) => (
+        <Pressable
+            style={[styles.notificationCard, !item.read && styles.unreadCard]}
+            onPress={() => handleNotificationPress(item)}
+            android_ripple={{ color: theme.border }}
+        >
+            <View style={styles.notificationContent}>
+                <View
+                    style={[
+                        styles.iconCircle,
+                        { backgroundColor: getNotificationColor(item.notification_type) + '20' },
+                    ]}
+                >
+                    <Ionicons
+                        name={getNotificationIcon(item.notification_type) as any}
+                        size={24}
+                        color={getNotificationColor(item.notification_type)}
+                    />
+                </View>
+
+                <View style={styles.textContent}>
+                    <Text style={[styles.title, !item.read && styles.unreadTitle]}>
+                        {item.title}
+                    </Text>
+                    <Text style={styles.body}>{item.body}</Text>
+                    <Text style={styles.timestamp}>
+                        {new Date(item.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        })}
+                    </Text>
+                </View>
+            </View>
+
+            {/* Action Buttons Row */}
+            <View style={styles.actionButtons}>
+                {!item.read && (
+                    <Pressable
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            handleDismiss(item.id);
+                        }}
+                        style={[styles.actionBtn, styles.dismissBtn]}
+                        hitSlop={8}
+                    >
+                        <Ionicons name="checkmark-outline" size={16} color="#10B981" />
+                        <Text style={[styles.actionText, styles.dismissText]}>Dismiss</Text>
+                    </Pressable>
+                )}
+
+                {!item.archived && (
+                    <Pressable
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            handleArchive(item.id);
+                        }}
+                        style={[styles.actionBtn, styles.archiveBtn]}
+                        hitSlop={8}
+                    >
+                        <Ionicons name="archive-outline" size={16} color={theme.textDim} />
+                        <Text style={[styles.actionText, styles.archiveText]}>Archive</Text>
+                    </Pressable>
+                )}
+
+                <Pressable
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                    }}
+                    style={[styles.actionBtn, styles.deleteBtn]}
+                    hitSlop={8}
+                >
+                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+                </Pressable>
+            </View>
+
+            {!item.read && <View style={styles.unreadDot} />}
+        </Pressable>
+    );
 
     return (
-        <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             {/* Header */}
-            <View style={s.header}>
-                <Text style={s.headerTitle}>Notifications</Text>
-                {user && (
-                    <Text style={s.headerSubtitle}>
-                        {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
-                    </Text>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Notifications</Text>
+                {unreadCount > 0 && activeTab === 'all' && (
+                    <Pressable onPress={handleMarkAllRead} style={styles.markAllBtn}>
+                        <Text style={styles.markAllText}>Mark all read</Text>
+                    </Pressable>
                 )}
             </View>
 
-            {loading ? (
-                <View style={s.centerContent}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                </View>
-            ) : (
-                <FlatList
-                    data={notifications}
-                    keyExtractor={(it) => it.id}
-                    contentContainerStyle={{ paddingBottom: 24 }}
-                    ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                    renderItem={({ item }) => (
-                        <Pressable
-                            style={s.row}
-                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                            onPress={() => {
-                                if (item.type === 'new_recall' && item.relatedId) {
-                                    router.push(`/recalls/${item.relatedId}`);
-                                } else if ((item.type === 'expired' || item.type === 'expiring') && item.relatedId) {
-                                    router.push('/(tabs)/pantry');
-                                }
-                            }}
-                        >
-                            {item.image ? (
-                                <Image source={{ uri: item.image }} style={s.thumb} />
-                            ) : (
-                                <View style={[s.thumb, s.iconThumb, { backgroundColor: theme.border }]}>
-                                    <Ionicons
-                                        name={getIcon(item.type)}
-                                        size={28}
-                                        color={getIconColor(item.type)}
-                                    />
-                                </View>
-                            )}
-                            <View style={{ flex: 1 }}>
-                                <Text style={s.title} numberOfLines={2}>
-                                    {item.title}
-                                </Text>
-                                <Text style={s.body} numberOfLines={1}>
-                                    {item.body}
-                                </Text>
-                                <Text style={s.time}>{item.timeAgo}</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={theme.textDim} />
-                        </Pressable>
-                    )}
-                    style={s.list}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={
-                        <View style={s.centerContent}>
-                            <MaterialCommunityIcons
-                                name="bell-outline"
-                                size={64}
-                                color={theme.textDim}
-                            />
-                            <Text style={[s.emptyTitle, { color: theme.text }]}>
-                                No notifications
-                            </Text>
-                            <Text style={[s.emptyText, { color: theme.textDim }]}>
-                                We'll notify you about recalls and expiring items
+            {/* Tabs */}
+            <View style={styles.tabsContainer}>
+                <Pressable
+                    style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+                    onPress={() => setActiveTab('all')}
+                    android_ripple={{ color: theme.border }}
+                >
+                    <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+                        All
+                    </Text>
+                    {allNotifications.filter(n => !n.archived).length > 0 && (
+                        <View style={styles.tabBadge}>
+                            <Text style={styles.tabBadgeText}>
+                                {allNotifications.filter(n => !n.archived).length}
                             </Text>
                         </View>
-                    }
-                />
+                    )}
+                </Pressable>
+
+                <Pressable
+                    style={[styles.tab, activeTab === 'unread' && styles.activeTab]}
+                    onPress={() => setActiveTab('unread')}
+                    android_ripple={{ color: theme.border }}
+                >
+                    <Text style={[styles.tabText, activeTab === 'unread' && styles.activeTabText]}>
+                        Unread
+                    </Text>
+                    {unreadCount > 0 && (
+                        <View style={[styles.tabBadge, styles.unreadBadge]}>
+                            <Text style={[styles.tabBadgeText, { color: 'white' }]}>{unreadCount}</Text>
+                        </View>
+                    )}
+                </Pressable>
+
+                <Pressable
+                    style={[styles.tab, activeTab === 'archived' && styles.activeTab]}
+                    onPress={() => setActiveTab('archived')}
+                    android_ripple={{ color: theme.border }}
+                >
+                    <Text style={[styles.tabText, activeTab === 'archived' && styles.activeTabText]}>
+                        Archived
+                    </Text>
+                    {allNotifications.filter(n => n.archived).length > 0 && (
+                        <View style={styles.tabBadge}>
+                            <Text style={styles.tabBadgeText}>
+                                {allNotifications.filter(n => n.archived).length}
+                            </Text>
+                        </View>
+                    )}
+                </Pressable>
+            </View>
+
+            {/* Notifications List */}
+            <FlatList
+                data={filteredNotifications}
+                renderItem={renderNotification}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                        <Ionicons
+                            name={
+                                activeTab === 'archived' ? 'archive-outline' :
+                                    activeTab === 'unread' ? 'checkmark-done-outline' :
+                                        'notifications-off-outline'
+                            }
+                            size={64}
+                            color={theme.textDim}
+                        />
+                        <Text style={styles.emptyTitle}>
+                            {activeTab === 'archived' ? 'No archived notifications' :
+                                activeTab === 'unread' ? 'All caught up!' :
+                                    'No notifications yet'}
+                        </Text>
+                        <Text style={styles.emptyText}>
+                            {activeTab === 'archived' ? 'Archived notifications will appear here' :
+                                activeTab === 'unread' ? 'You have no unread notifications' :
+                                    "You'll see notifications here when items are expiring"}
+                        </Text>
+                    </View>
+                }
+            />
+
+            {/* Test Button (dev only) */}
+            {__DEV__ && (
+                <Pressable
+                    style={styles.testBtn}
+                    onPress={async () => {
+                        try {
+                            await sendTestNotification();
+                            Alert.alert('Success', 'Test notification sent!');
+                            setTimeout(handleRefresh, 2000);
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to send test notification');
+                        }
+                    }}
+                    android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+                >
+                    <Ionicons name="flask" size={20} color="white" />
+                    <Text style={styles.testBtnText}>Test</Text>
+                </Pressable>
             )}
         </SafeAreaView>
     );
 }
 
-const makeStyles = (t: any) =>
-    StyleSheet.create({
-        screen: {
-            flex: 1,
-            backgroundColor: t.bg,
-        },
-        header: {
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: t.border,
-        },
-        headerTitle: {
-            fontSize: 20,
-            fontWeight: '800',
-            color: t.text,
-        },
-        headerSubtitle: {
-            fontSize: 14,
-            color: t.textDim,
-            marginTop: 2,
-        },
-        list: {
-            paddingHorizontal: 16,
-            paddingTop: 12,
-        },
-        row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            backgroundColor: t.card,
-            borderRadius: 16,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            shadowColor: '#000',
-            shadowOpacity: t.name === 'light' ? 0.05 : 0.18,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            ...(Platform.OS === 'android' ? { elevation: 2 } : {}),
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.name === 'light' ? 'transparent' : t.border,
-        },
-        thumb: {
-            width: 56,
-            height: 56,
-            borderRadius: 12,
-            backgroundColor: t.border,
-        },
-        iconThumb: {
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        title: {
-            fontSize: 16,
-            fontWeight: '700',
-            color: t.text,
-        },
-        body: {
-            fontSize: 14,
-            color: t.textDim,
-            marginTop: 2,
-        },
-        time: {
-            marginTop: 4,
-            fontSize: 12,
-            color: t.primary,
-            fontWeight: '600',
-        },
-        centerContent: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: 32,
-        },
-        emptyTitle: {
-            fontSize: 18,
-            fontWeight: '700',
-            marginTop: 16,
-        },
-        emptyText: {
-            fontSize: 14,
-            textAlign: 'center',
-            marginTop: 8,
-        },
-    });
+const createStyles = (theme: any) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.bg },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: theme.card,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: theme.border,
+    },
+    headerTitle: { fontSize: 24, fontWeight: '800', color: theme.text },
+    markAllBtn: { paddingHorizontal: 12, paddingVertical: 6 },
+    markAllText: { fontSize: 14, color: theme.primary, fontWeight: '600' },
+    tabsContainer: {
+        flexDirection: 'row',
+        backgroundColor: theme.card,
+        paddingHorizontal: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: theme.border,
+    },
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        gap: 6,
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: { borderBottomColor: theme.primary },
+    tabText: { fontSize: 15, fontWeight: '600', color: theme.textDim },
+    activeTabText: { color: theme.primary },
+    tabBadge: {
+        backgroundColor: theme.border,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
+        minWidth: 20,
+        alignItems: 'center',
+    },
+    unreadBadge: { backgroundColor: theme.primary },
+    tabBadgeText: { fontSize: 11, fontWeight: '700', color: theme.text },
+    listContent: {
+        padding: 16,
+        gap: 12,
+        paddingBottom: 100, // Account for tab bar
+    },
+    notificationCard: {
+        backgroundColor: theme.card,
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: theme.name === 'light' ? 0.05 : 0.15,
+        shadowRadius: 2,
+        elevation: 2,
+        position: 'relative',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: theme.border,
+    },
+    unreadCard: { borderLeftWidth: 3, borderLeftColor: theme.primary },
+    notificationContent: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    textContent: { flex: 1 },
+    title: { fontSize: 16, fontWeight: '600', color: theme.textDim, marginBottom: 4 },
+    unreadTitle: { color: theme.text, fontWeight: '700' },
+    body: { fontSize: 14, color: theme.textDim, lineHeight: 20, marginBottom: 4 },
+    timestamp: { fontSize: 12, color: theme.textDim, opacity: 0.7 },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        paddingTop: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.border,
+    },
+    actionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        backgroundColor: theme.inputBg,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: theme.border,
+    },
+    dismissBtn: {},
+    archiveBtn: {},
+    deleteBtn: { marginLeft: 'auto' },
+    actionText: { fontSize: 12, fontWeight: '600' },
+    dismissText: { color: '#10B981' },
+    archiveText: { color: theme.textDim },
+    deleteText: { color: '#EF4444' },
+    unreadDot: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: theme.primary,
+    },
+    emptyState: { alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: theme.text,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    emptyText: { fontSize: 14, color: theme.textDim, textAlign: 'center', lineHeight: 20 },
+    testBtn: {
+        position: 'absolute',
+        bottom: 100, // Above tab bar
+        right: 16,
+        backgroundColor: '#10B981',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    testBtnText: { color: 'white', fontWeight: '700' },
+});

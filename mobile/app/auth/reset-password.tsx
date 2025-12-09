@@ -1,149 +1,170 @@
-
-import { SafeAreaView } from 'react-native-safe-area-context'; // Ensures UI elements are displayed within safe boundaries.
-import { View, Text, StyleSheet, Pressable, TextInput, TouchableOpacity, Platform } from 'react-native';
-import { useRouter } from 'expo-router'; // for handling screen-to-screen navigation
+// app/(auth)/reset-password.tsx
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Pressable,
+    Alert,
+    ActivityIndicator
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from "@/app/context/auth_context";
 import React, { useState } from 'react';
-import axios from 'axios';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 const BG = '#F5F3FA';
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
 
 export default function ResetPassword() {
     const { user } = useAuth();
     const router = useRouter();
-    const [oldPassword, setOldPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [verifyPassword, setVerifyPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const API_BASE = getBaseUrl();
+    const handleSendResetEmail = async () => {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
 
-    const verifyCurrentPassword = async () => {
-        try {
-            const response = await axios.post(`${API_BASE}/users/verify_password`, {
-                old_password: oldPassword,
-            });
-            if (response.data.valid) {
-                console.log('✅ Current password is correct.');
-                return true;
-            } else {
-                console.log('❌ Incorrect password.');
-                return false;
-            }
-        } catch (error: any) {
-            console.error('Verification failed:', error.response?.data || error.message);
-            return false;
-        }
-    };
-
-    const handleChangePassword = async () => {
-        if (newPassword !== verifyPassword) {
-            alert('New passwords do not match.');
+        if (!currentUser || !currentUser.email) {
+            Alert.alert('Error', 'No email associated with this account');
             return;
         }
 
-        const verified = await verifyCurrentPassword();
-        if (!verified) {
-            alert('Your current password is incorrect.');
-            return;
-        }
+        Alert.alert(
+            'Reset Password',
+            `We'll send password reset instructions to:\n\n${currentUser.email}\n\nYou'll be able to create a new password through the email link.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Send Email',
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            await sendPasswordResetEmail(auth, currentUser.email!);
 
-        try {
-            const response = await axios.patch(`${API_BASE}/users/update_password`, {
-                old_password: oldPassword,
-                new_password: newPassword,
-            });
-            alert('Password updated successfully!');
-            console.log(response.data);
-        } catch (error: any) {
-            console.error('Password update failed:', error.response?.data || error.message);
-            alert('Failed to update password.');
-        }
+                            Alert.alert(
+                                'Email Sent! ✓',
+                                `Password reset instructions have been sent to:\n\n${currentUser.email}\n\nCheck your inbox and follow the link to reset your password.`,
+                                [
+                                    {
+                                        text: 'OK',
+                                        onPress: () => router.back()
+                                    }
+                                ]
+                            );
+                        } catch (error: any) {
+                            console.error('Password reset error:', error);
+
+                            let errorMessage = 'Failed to send reset email. Please try again.';
+
+                            if (error.code === 'auth/too-many-requests') {
+                                errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+                            } else if (error.code === 'auth/user-not-found') {
+                                errorMessage = 'No account found with this email.';
+                            } else if (error.code === 'auth/invalid-email') {
+                                errorMessage = 'Invalid email address.';
+                            }
+
+                            Alert.alert('Error', errorMessage);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
         <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+            {/* Header */}
             <View style={styles.headerRow}>
-                <Pressable hitSlop={12} onPress={() => router.back()}>
+                <Pressable hitSlop={12} onPress={() => router.back()} disabled={loading}>
                     <Ionicons name="chevron-back" size={26} color="#1A1523" />
                 </Pressable>
                 <Text style={styles.title}>Reset Password</Text>
             </View>
 
-            <Text style={styles.sub}>
-                Password must be at least 8 characters,
-                include an uppercase letter, a number,
-                and a special character.
-            </Text>
+            {/* Icon */}
+            <View style={styles.iconContainer}>
+                <View style={styles.iconCircle}>
+                    <Ionicons name="lock-closed-outline" size={48} color="#2563EB" />
+                </View>
+            </View>
 
-            <TextInput
-                placeholder="Current password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={oldPassword}
-                onChangeText={setOldPassword}
-                style={styles.input}
-            />
+            {/* Main Content */}
+            <View style={styles.content}>
+                <Text style={styles.heading}>Secure Password Reset</Text>
 
-            <TextInput
-                placeholder="New password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                style={styles.input}
-            />
+                <Text style={styles.description}>
+                    We'll send you a secure link to reset your password via email.
+                </Text>
 
-            <TextInput
-                placeholder="Re-type new password"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={verifyPassword}
-                onChangeText={setVerifyPassword}
-                style={styles.input}
-            />
+                <View style={styles.emailCard}>
+                    <Ionicons name="mail-outline" size={20} color="#6B7280" />
+                    <Text style={styles.emailText}>
+                        {user?.email || 'your-email@example.com'}
+                    </Text>
+                </View>
 
-            <Text style={styles.sub}>
-                Forgot password
-            </Text>
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoTitle}>How it works:</Text>
+                    <View style={styles.step}>
+                        <Text style={styles.stepNumber}>1</Text>
+                        <Text style={styles.stepText}>
+                            Click "Send Reset Email" below
+                        </Text>
+                    </View>
+                    <View style={styles.step}>
+                        <Text style={styles.stepNumber}>2</Text>
+                        <Text style={styles.stepText}>
+                            Check your email inbox
+                        </Text>
+                    </View>
+                    <View style={styles.step}>
+                        <Text style={styles.stepNumber}>3</Text>
+                        <Text style={styles.stepText}>
+                            Click the link and create a new password
+                        </Text>
+                    </View>
+                </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
-                <Text style={styles.buttonText}>{'Change password'}</Text>
-            </TouchableOpacity>
+                <Pressable
+                    style={[styles.button, loading && styles.buttonDisabled]}
+                    onPress={handleSendResetEmail}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <>
+                            <Ionicons name="mail" size={20} color="white" style={{ marginRight: 8 }} />
+                            <Text style={styles.buttonText}>Send Reset Email</Text>
+                        </>
+                    )}
+                </Pressable>
 
+                <Text style={styles.helpText}>
+                    The link will expire in 1 hour for security.
+                </Text>
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-
     screen: {
         flex: 1,
-        backgroundColor: BG
+        backgroundColor: BG,
     },
-
-    header: {
-        height: 52,
-        paddingHorizontal: 16,
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 6,
+        marginVertical: 10,
     },
-
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#1A1523'
-    },
-
     title: {
         flex: 1,
         textAlign: 'center',
@@ -152,91 +173,120 @@ const styles = StyleSheet.create({
         color: '#0F172A',
         marginRight: 28,
     },
-
-    headerRow: {
-        flexDirection: 'row',
+    iconContainer: {
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: 10,
-        paddingBottom: 6,
-        marginVertical: 10
+        marginTop: 20,
+        marginBottom: 24,
     },
-
-    sub: {
-        fontSize: 14,
-        textAlign: 'center',
-        color: '#6B7280',
-        marginTop: 2,
-        marginBottom: 12,
-        marginHorizontal: 10,
-    },
-
-    forgotPassword: {
-        fontSize: 14,
-        textAlign: 'center',
-        color: '#6B7280',
-        marginTop: 2,
-        marginBottom: 12,
-        marginHorizontal: 10,
-    },
-
-    section: {
-        marginTop: 24,
-        marginBottom: 8,
-        paddingHorizontal: 16,
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#1A1523',
-    },
-
-    logoutText: {
-        color: '#d32f2f',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-
-    input: {
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        fontSize: 16,
-        color: '#111827',
-        marginBottom: 12,
-        marginHorizontal: 25
-    },
-
-    row: {
-        paddingHorizontal: 16,
-        height: 52,
-        backgroundColor: '#fff',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomColor: '#EEE9F7',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-
-    label: { fontSize: 16, fontWeight: '600', color: '#1A1523' },
-    right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    value: { fontSize: 16, color: '#2563EB', fontWeight: '600' },
-
-    button: {
-        backgroundColor: '#2563EB',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 30,
+    iconCircle: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        backgroundColor: '#EFF6FF',
         alignItems: 'center',
         justifyContent: 'center',
-        marginHorizontal: 32,
-        marginTop: 8,
-        minWidth: 180,
+        borderWidth: 2,
+        borderColor: '#DBEAFE',
     },
-
+    content: {
+        paddingHorizontal: 24,
+    },
+    heading: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#0F172A',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    description: {
+        fontSize: 16,
+        color: '#6B7280',
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 24,
+    },
+    emailCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginBottom: 24,
+        gap: 12,
+    },
+    emailText: {
+        fontSize: 16,
+        color: '#111827',
+        fontWeight: '600',
+        flex: 1,
+    },
+    infoBox: {
+        backgroundColor: '#F0F9FF',
+        padding: 20,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#BFDBFE',
+        marginBottom: 24,
+    },
+    infoTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1E40AF',
+        marginBottom: 12,
+    },
+    step: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 12,
+    },
+    stepNumber: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#2563EB',
+        color: 'white',
+        fontSize: 12,
+        fontWeight: '700',
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+    stepText: {
+        fontSize: 14,
+        color: '#374151',
+        flex: 1,
+    },
+    button: {
+        backgroundColor: '#2563EB',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        minHeight: 56,
+        shadowColor: '#2563EB',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
     buttonText: {
         color: 'white',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '700',
+    },
+    helpText: {
+        fontSize: 13,
+        textAlign: 'center',
+        color: '#9CA3AF',
+        marginTop: 16,
+        fontStyle: 'italic',
     },
 });
