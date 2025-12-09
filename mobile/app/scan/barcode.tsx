@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator } from 'rea
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { api } from '@/lib/api';
 
 export default function BarcodeScan() {
     const router = useRouter();
@@ -28,11 +29,67 @@ export default function BarcodeScan() {
     };
 
     const handleAddToPantry = async (barcodeData: string) => {
-        // TODO: Look up product info from barcode API
-        // For now, just navigate back
         console.log('Adding barcode to pantry:', barcodeData);
-        Alert.alert('Coming Soon', 'Barcode lookup feature will be added in a future update!');
-        router.back();
+
+        try {
+            // Look up product from OpenFoodFacts
+            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcodeData}.json`);
+            const data = await response.json();
+
+            if (data.status === 1 && data.product) {
+                const product = data.product;
+                const productName = product.product_name || 'Unknown Product';
+                const imageUrl = product.image_url || product.image_front_url;
+
+                // Create pantry item with barcode
+                const pantryData = {
+                    pantry: {
+                        item_name: productName,
+                        quantity: 1,
+                        barcode: barcodeData,
+                        image_url: imageUrl,
+                        manufacturer: product.brands || undefined,
+                        category: product.categories_tags?.[0]?.replace('en:', '') || undefined,
+                        allergen: product.allergens_tags?.join(', ') || undefined,
+                    }
+                };
+
+                await api.post('/api/v1/pantries', pantryData);
+
+                Alert.alert(
+                    'Success!',
+                    `Added "${productName}" to your pantry`,
+                    [{ text: 'OK', onPress: () => router.replace('/(tabs)/pantry') }]
+                );
+            } else {
+                // Product not found, ask user for name
+                Alert.prompt(
+                    'Product Not Found',
+                    'Enter product name to add to pantry:',
+                    async (name) => {
+                        if (name && name.trim()) {
+                            try {
+                                await api.post('/api/v1/pantries', {
+                                    pantry: {
+                                        item_name: name.trim(),
+                                        quantity: 1,
+                                        barcode: barcodeData,
+                                    }
+                                });
+                                Alert.alert('Success!', `Added "${name}" to your pantry`);
+                                router.replace('/(tabs)/pantry');
+                            } catch (error: any) {
+                                Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item');
+                            }
+                        }
+                    },
+                    'plain-text'
+                );
+            }
+        } catch (error: any) {
+            console.error('Error adding to pantry:', error);
+            Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item to pantry');
+        }
     };
 
     // Loading state while checking permissions
