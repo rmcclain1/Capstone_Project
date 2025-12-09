@@ -80,9 +80,12 @@ export default function ReceiptScan() {
                 http.post('/api/v1/pantries', {
                     pantry: {
                         item_name: it.name || it.raw,
-                        // Only include fields that exist in your schema
-                        // manufacturer: it.matched?.brand,
-                        // category: it.matched?.category,
+                        manufacturer: it.matched?.brand,
+                        category: it.matched?.category,
+                        image_url: it.matched?.image_url,
+                        
+                        // Default values
+                        quantity: it.qty || 1,
                     }
                 })
             );

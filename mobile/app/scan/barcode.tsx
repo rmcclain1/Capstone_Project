@@ -63,10 +63,14 @@ export default function BarcodeScan() {
             await http.post('/api/v1/pantries', {
                 pantry: {
                     item_name: product.name,
-                    // Only include fields that exist in your schema
+                    // Optinonal fields
                     manufacturer: product.brand,
-                    // category: product.category,
-                    // Remove image_url if column doesn't exist
+                    category: product.category,
+                    image_url: product.image_url,
+
+                    // Default values
+                    quantity: 1,
+                  
                 }
             });
 
