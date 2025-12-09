@@ -12,10 +12,6 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#E6F4FE"
-      },
       "package": "com.recallapp.app",
       "permissions": [
         "android.permission.CAMERA"
