@@ -7,8 +7,8 @@ import { CFG } from './config';
 
 // Use different URL based on platform
 const API_URL = Platform.OS === 'web'
-    ? CFG.API_URL_WEB     // http://localhost:3000 for web
-    : CFG.API_URL_LAN;    // http://10.0.2.2:3000 for mobile
+    ? CFG.API_URL_WEB     // http://192.168.1.42:3000 for web
+    : CFG.API_URL_LAN;    // http://192.168.1.42:3000 for mobile
 
 console.log('[API] Platform:', Platform.OS);
 console.log('[API] Base URL:', API_URL);

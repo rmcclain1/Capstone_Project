@@ -17,6 +17,15 @@ type EnvJson = {
 };
 
 const cfg: EnvJson = (localEnv as EnvJson) || {};
+console.log('[CONFIG] Loaded env.local.json:', {
+
+    webBaseUrl: cfg.api?.webBaseUrl,
+
+    lanBaseUrl: cfg.api?.lanBaseUrl
+
+});
+
+
 
 export const CFG = {
     GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? cfg.google?.webClientId ?? '',
@@ -31,6 +40,14 @@ export const CFG = {
     FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? cfg.firebase?.appId ?? '',
     FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID ?? cfg.firebase?.measurementId ?? '',
 
-    API_URL_WEB: process.env.EXPO_PUBLIC_API_URL_WEB ?? cfg.api?.webBaseUrl ?? 'http://localhost:3000',
-    API_URL_LAN: process.env.EXPO_PUBLIC_API_URL_LAN ?? cfg.api?.lanBaseUrl ?? 'http://10.0.2.2:3000',
+    API_URL_WEB: process.env.EXPO_PUBLIC_API_URL_WEB ?? cfg.api?.webBaseUrl ?? 'http://192.168.1.42:3000',
+    API_URL_LAN: process.env.EXPO_PUBLIC_API_URL_LAN ?? cfg.api?.lanBaseUrl ?? 'http://192.168.1.42:3000'
 } as const;
+
+console.log('[CONFIG] Final CFG values:', {
+
+    API_URL_WEB: CFG.API_URL_WEB,
+
+    API_URL_LAN: CFG.API_URL_LAN
+
+});
