@@ -16,7 +16,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#E6F4FE"
       },
-      "package": "com.recallapp.app"
+      "package": "com.recallapp.app",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -45,7 +48,13 @@
       "reactCompiler": false
     },
     "extra": {
-      "EXPO_PUBLIC_API_URL": "http://192.168.1.123:3000"
+      "EXPO_PUBLIC_API_URL": "http://192.168.1.123:3000",
+      "router": {
+        "origin": "https://recall-app.com"
+      },
+      "eas": {
+        "projectId": "6e593678-75aa-46d5-aece-74ce82752f25"
+      }
     }
   }
 }

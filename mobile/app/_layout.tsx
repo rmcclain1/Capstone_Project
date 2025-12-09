@@ -1,5 +1,5 @@
 import React from 'react';
-//import 'react-native-gesture-handler';
+import 'react-native-gesture-handler';
 import { Stack, router } from 'expo-router';
 import { AuthProvider } from '@/app/context/auth_context';
 import { ThemeProvider, useTheme } from '@/constants/theme_provider';
