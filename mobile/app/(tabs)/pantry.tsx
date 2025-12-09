@@ -1,4 +1,4 @@
-// app/pantry.tsx (or app/(tabs)/pantry.tsx)
+// app/(tabs)/pantry.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,14 +16,13 @@ import {
     Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
 import ScanSheet from '@/components/scan-sheet';
 import AddItemModal from '@/components/add-item-modal';
-import { useAuth } from '@/app/context/auth_context';
+import { useTheme } from '@/constants/theme_provider';
+import { api } from '@/lib/api';
 
 const BLUE = '#2362ffff';
 const BG = '#F5F3FA';
-import { useTheme } from '@/constants/theme_provider';
 
 type ApiPantry = {
     id: number;
@@ -50,12 +49,6 @@ type PantryItem = {
 };
 
 /* ---------------- helpers ---------------- */
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
 
 function useDebounced<T>(value: T, delay = 300) {
     const [v, setV] = useState(value);
@@ -128,7 +121,6 @@ function isExpiredFromMMDDYYYY(mmddyyyy?: string) {
 /* ---------------- screen ---------------- */
 
 export default function PantryScreen() {
-    const { token } = useAuth();
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
@@ -146,17 +138,13 @@ export default function PantryScreen() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const api = useMemo(() => {
-        const inst = axios.create({ baseURL: API_BASE });
-        if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
-        return inst;
-    }, [token]);
-
     const fetchPantry = useCallback(async () => {
         try {
             setError(null);
             setLoading(true);
-            const { data } = await api.get('/pantries');
+
+            // Use shared axios client (with JWT + baseURL built-in)
+            const { data } = await api.get('/api/v1/pantries');
             const raw: ApiPantry[] = Array.isArray(data) ? data : data?.items || [];
             const mapped = raw.map(mapToUI);
 
@@ -179,7 +167,7 @@ export default function PantryScreen() {
         } finally {
             setLoading(false);
         }
-    }, [api, dq, tab]);
+    }, [dq, tab]);
 
     useEffect(() => {
         fetchPantry();
@@ -236,7 +224,7 @@ export default function PantryScreen() {
                 body.pantry.image_url = form.imageUri.trim();
             }
 
-            await api.post('/pantries', body);
+            await api.post('/api/v1/pantries', body);
             setAddOpen(false);
             await fetchPantry();
         } catch (e: any) {
@@ -245,38 +233,44 @@ export default function PantryScreen() {
                 'Add Failed',
                 e?.response?.data?.errors?.join(', ') ??
                 e?.response?.data?.error ??
-                e?.message ?? 'Unknown error'
+                e?.message ??
+                'Unknown error'
             );
         }
     };
 
     const removeLocal = useCallback((id: string) => {
-        setItems(prev => prev.filter(x => x.id !== id));
+        setItems((prev) => prev.filter((x) => x.id !== id));
     }, []);
 
-    const deletePantry = useCallback(async (id: string) => {
-        try {
-            setDeletingId(id);
-            removeLocal(id); // optimistic update
-            await api.delete(`/pantries/${id}`);
-        } catch (e: any) {
-            await fetchPantry(); // restore truth on failure
-            Alert.alert('Delete failed', e?.response?.data?.error ?? e?.message ?? 'Unknown error');
-        } finally {
-            setDeletingId(null);
-        }
-    }, [api, fetchPantry, removeLocal]);
+    const deletePantry = useCallback(
+        async (id: string) => {
+            try {
+                setDeletingId(id);
+                removeLocal(id); // optimistic update
+                await api.delete(`/api/v1/pantries/${id}`);
+            } catch (e: any) {
+                await fetchPantry(); // restore truth on failure
+                Alert.alert(
+                    'Delete failed',
+                    e?.response?.data?.error ?? e?.message ?? 'Unknown error'
+                );
+            } finally {
+                setDeletingId(null);
+            }
+        },
+        [fetchPantry, removeLocal]
+    );
 
-    const confirmDelete = useCallback((id: string, name: string) => {
-        Alert.alert(
-            'Delete item?',
-            `Are you sure you want to delete “${name}”?`,
-            [
+    const confirmDelete = useCallback(
+        (id: string, name: string) => {
+            Alert.alert('Delete item?', `Are you sure you want to delete “${name}”?`, [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Delete', style: 'destructive', onPress: () => deletePantry(id) },
-            ]
-        );
-    }, [deletePantry]);
+            ]);
+        },
+        [deletePantry]
+    );
 
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
@@ -321,16 +315,21 @@ export default function PantryScreen() {
             {loading ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                     <ActivityIndicator size="large" color={theme.primary} />
-                    {!!error && <Text style={{ marginTop: 10, color: theme.danger || '#B00020' }}>{error}</Text>}
+                    {!!error && (
+                        <Text style={{ marginTop: 10, color: theme.danger || '#B00020' }}>
+                            {error}
+                        </Text>
+                    )}
                 </View>
             ) : (
-
                 <FlatList
                     data={items}
                     keyExtractor={(it) => it.id}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
                     ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
                             <Text style={{ color: theme.textDim }}>
@@ -343,22 +342,40 @@ export default function PantryScreen() {
                     renderItem={({ item }) => (
                         <Pressable
                             style={s.row}
-                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                            android_ripple={
+                                Platform.OS === 'android' ? { color: theme.border } : undefined
+                            }
                         >
                             <Image
-                                source={{ uri: item.image || 'https://picsum.photos/seed/pantry/96' }}
+                                source={{
+                                    uri: item.image || 'https://picsum.photos/seed/pantry/96',
+                                }}
                                 style={s.thumb}
                             />
 
                             <View style={{ flex: 1 }}>
-                                <Text style={s.name} numberOfLines={1}>{item.name}</Text>
-                                {!!item.sub && <Text style={s.sub} numberOfLines={1}>{item.sub}</Text>}
+                                <Text style={s.name} numberOfLines={1}>
+                                    {item.name}
+                                </Text>
+                                {!!item.sub && (
+                                    <Text style={s.sub} numberOfLines={1}>
+                                        {item.sub}
+                                    </Text>
+                                )}
                             </View>
 
                             {item.status === 'expired' ? (
-                                <Ionicons name="alert-circle-outline" size={20} color={theme.danger || '#EF4444'} />
+                                <Ionicons
+                                    name="alert-circle-outline"
+                                    size={20}
+                                    color={theme.danger || '#EF4444'}
+                                />
                             ) : item.status === 'soon' ? (
-                                <Ionicons name="warning-outline" size={20} color={theme.primary} />
+                                <Ionicons
+                                    name="warning-outline"
+                                    size={20}
+                                    color={theme.primary}
+                                />
                             ) : null}
 
                             <Pressable
@@ -368,9 +385,15 @@ export default function PantryScreen() {
                                 disabled={deletingId === item.id}
                             >
                                 <Ionicons
-                                    name={deletingId === item.id ? 'time-outline' : 'trash-outline'}
+                                    name={
+                                        deletingId === item.id ? 'time-outline' : 'trash-outline'
+                                    }
                                     size={20}
-                                    color={deletingId === item.id ? theme.textDim : (theme.danger || '#EF4444')}
+                                    color={
+                                        deletingId === item.id
+                                            ? theme.textDim
+                                            : theme.danger || '#EF4444'
+                                    }
                                 />
                             </Pressable>
                         </Pressable>

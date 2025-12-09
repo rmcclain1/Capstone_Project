@@ -1,12 +1,16 @@
-// app/(tabs)/_layout.tsx
-import React, { useMemo } from 'react';
-import { Tabs } from 'expo-router';
+// mobile/app/(tabs)/_layout.tsx
+import React, { useMemo, useEffect } from 'react';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/constants/theme_provider';
+import { useAuth } from '@/app/context/auth_context';
 
-export default function Layout() {
+export default function TabsLayout() {
     const { theme } = useTheme();
+    const { user, loading } = useAuth();
+    const router = useRouter();
+    const segments = useSegments();
 
     const tabBarStyle = useMemo(
         () => [
@@ -19,6 +23,32 @@ export default function Layout() {
         ],
         [theme],
     );
+
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (loading) return;
+
+        const inTabs = segments[0] === '(tabs)';
+
+        if (!user && inTabs) {
+            console.log('[Tabs] Not authenticated, redirecting to login');
+            router.replace('/login');
+        }
+    }, [user, loading, segments]);
+
+    // Show loading while checking auth
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
+                <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+        );
+    }
+
+    // Don't render tabs if not authenticated
+    if (!user) {
+        return null;
+    }
 
     return (
         <Tabs
@@ -66,7 +96,6 @@ export default function Layout() {
                     ),
                 }}
             />
-
             <Tabs.Screen
                 name="notifications"
                 options={{
@@ -98,10 +127,9 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 22,
         borderTopRightRadius: 22,
         position: 'absolute',
-        // shadows
         shadowColor: '#000',
         shadowRadius: 12,
         shadowOffset: { width: 0, height: -2 },
-        ...(Platform.OS === 'android' ? { elevation: 10 } : null),
+        ...(Platform.OS === 'android' ? { elevation: 10 } : {}),
     },
 });

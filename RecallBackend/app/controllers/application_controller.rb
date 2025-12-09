@@ -10,7 +10,7 @@ class ApplicationController < ActionController::API
     token  = header[/\ABearer (.+)\z/, 1]
     return render_unauthorized('Missing token') unless token
 
-    decoded = JsonWebToken.decode(token) # HashWithIndifferentAccess
+    decoded = JsonWebToken.decode(token)
     @current_user = User.find_by(id: decoded[:user_id])
     return render_unauthorized('User not found') unless @current_user
   rescue JWT::ExpiredSignature

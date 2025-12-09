@@ -1,23 +1,17 @@
-// app/profile.tsx (or app/(tabs)/profile.tsx)
+// mobile/app/profile.tsx
 import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View, Text, StyleSheet, Image, Pressable, ScrollView,
-    RefreshControl, ActivityIndicator, Alert, Platform,
+    RefreshControl, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { api as axios } from '@/lib/api';
+import { api } from '@/lib/api'; // Use shared API client
 import EditProfileModal from '@/components/edit-profile-modal';
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
 
 /* -------------------- helpers -------------------- */
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
 
 function toArray(raw: any): string[] {
     if (Array.isArray(raw)) {
@@ -27,7 +21,7 @@ function toArray(raw: any): string[] {
                 try {
                     const parsed = JSON.parse(t);
                     if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-                } catch {}
+                } catch { }
             }
         }
         return raw.filter(x => typeof x === 'string');
@@ -38,14 +32,13 @@ function toArray(raw: any): string[] {
             try {
                 const parsed = JSON.parse(t);
                 if (Array.isArray(parsed)) return parsed.filter(x => typeof x === 'string');
-            } catch {}
+            } catch { }
         }
         return [t];
     }
     return [];
 }
 
-/** “First Last” -> { first_name, last_name } */
 function splitName(full?: string) {
     const s = (full || '').trim();
     if (!s) return { first_name: '', last_name: '' };
@@ -53,7 +46,6 @@ function splitName(full?: string) {
     return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') };
 }
 
-/** Accepts MM/DD/YYYY or ISO and returns ISO (YYYY-MM-DD) when possible */
 function toISODateMaybe(val?: string) {
     if (!val) return undefined;
     const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -64,7 +56,6 @@ function toISODateMaybe(val?: string) {
 
 const FIXED_ALLERGIES = ['Peanuts', 'Tree Nuts', 'Shellfish', 'Fish', 'Egg', 'Dairy', 'Gluten', 'Soy'] as const;
 
-/** string[] -> toggle map for modal */
 function allergiesToToggleMap(allergies: string[]) {
     const rec: Record<string, boolean> = {
         Peanuts: false, 'Tree Nuts': false, Shellfish: false, Fish: false,
@@ -77,13 +68,11 @@ function allergiesToToggleMap(allergies: string[]) {
     return rec;
 }
 
-/** get the first unknown allergy word for “Other” input */
 function firstOther(allergies: string[]) {
     const fixed = new Set(FIXED_ALLERGIES);
     return allergies.find(a => !fixed.has(a as any)) || '';
 }
 
-/** modal -> API array */
 function modalToAllergyArray(record: Record<string, boolean> = {}, other?: string) {
     const out: string[] = [];
     FIXED_ALLERGIES.forEach(k => { if (record[k]) out.push(k); });
@@ -98,7 +87,7 @@ export default function Profile() {
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
-    const { user, token, setUser, refreshUser, loading } = useAuth();
+    const { user, setUser, refreshUser, loading } = useAuth();
     const [editOpen, setEditOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -110,21 +99,38 @@ export default function Profile() {
 
     const allergies = useMemo(() => toArray(user?.allergies), [user]);
 
+    // Fix Google profile images - remove size params and use larger size
+    const avatarUrl = useMemo(() => {
+        const url = user?.avatar_url || user?.profile_picture_url;
+        if (!url) return 'https://i.pravatar.cc/100?img=12';
+
+        // If it's a Google profile image, strip size params and use s200-c for better quality
+        if (url.includes('googleusercontent.com')) {
+            return url.replace(/=s\d+-c/, '=s200-c');
+        }
+
+        return url;
+    }, [user]);
+
     const onRefresh = useCallback(async () => {
-        if (!token || !user) return;
+        if (!user) return;
         try {
+            console.log('[Profile] Refreshing...');
             setRefreshing(true);
             await refreshUser();
+            console.log('[Profile] Refreshed');
         } catch (e: any) {
+            console.error('[Profile] Refresh error:', e?.response?.data || e.message);
             Alert.alert('Error', e?.message ?? 'Failed to refresh profile');
         } finally {
             setRefreshing(false);
         }
-    }, [token, user, refreshUser]);
+    }, [user, refreshUser]);
 
     const onSave = useCallback(async (payload: any) => {
-        if (!user || !token) return;
+        if (!user) return;
         try {
+            console.log('[Profile] Saving...', payload);
             setSaving(true);
 
             const body = {
@@ -132,24 +138,23 @@ export default function Profile() {
                     ...splitName(payload.name),
                     username: payload.username,
                     email: payload.email,
-                    phone_number: payload.phone,
+                    phonenumber: payload.phone, // Note: backend uses 'phonenumber'
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
-                    profile_picture_url: payload.avatarUri, // <-- match modal prop name
+                    avatar_url: payload.profile_picture_url, // Match what modal sends
                     allergies: modalToAllergyArray(payload.allergies, payload.otherAllergy),
                 },
             };
 
-            const api = axios.create({
-                baseURL: API_BASE,
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            console.log('[Profile] Sending update:', body);
+            const { data } = await api.put(`/api/v1/users/${user.id}`, body);
+            console.log('[Profile] Update successful');
 
-            const { data } = await api.put(`${API_BASE}/users/${user.id}`, body);
-            setUser({ ...data, allergies: toArray((data as any).allergies) });
+            setUser({ ...data, allergies: toArray(data.allergies) });
             setEditOpen(false);
+            Alert.alert('Success', 'Profile updated successfully');
         } catch (e: any) {
-            console.log('Profile update failed:', e?.response?.data || e?.message);
+            console.error('[Profile] Update error:', e?.response?.data || e.message);
             Alert.alert('Update failed',
                 e?.response?.data?.errors?.join(', ') ??
                 e?.response?.data?.error ??
@@ -158,7 +163,7 @@ export default function Profile() {
         } finally {
             setSaving(false);
         }
-    }, [user, token, setUser]);
+    }, [user, setUser]);
 
     if (loading) {
         return (
@@ -168,11 +173,10 @@ export default function Profile() {
         );
     }
 
-    // If not loading and no user, navigate away or show a CTA
     if (!user) {
         return (
             <SafeAreaView style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
-                <Text style={{ color: theme.text, marginBottom: 12 }}>You’re signed out.</Text>
+                <Text style={{ color: theme.text, marginBottom: 12 }}>You're signed out.</Text>
                 <Pressable onPress={() => router.replace('/login')} style={s.editBtn}>
                     <Text style={s.editBtnText}>Sign in</Text>
                 </Pressable>
@@ -184,7 +188,7 @@ export default function Profile() {
         <SafeAreaView style={s.screen} edges={['top']}>
             {/* Header */}
             <View style={s.header}>
-                <Pressable onPress={() => router.back()}>
+                <Pressable onPress={() => router.back()} hitSlop={12}>
                     <Text style={s.back}>{'‹'}</Text>
                 </Pressable>
                 <Text style={s.headerTitle}>Profile</Text>
@@ -207,19 +211,23 @@ export default function Profile() {
             >
                 <View style={s.center}>
                     <Image
-                        source={{ uri: user.profile_picture_url || 'https://i.pravatar.cc/100?img=12' }}
+                        source={{ uri: avatarUrl }}
                         style={s.avatar}
                     />
-                    <Text style={s.name}>{fullName}</Text>
-                    <Text style={s.username}>@{user.username}</Text>
-                    <Pressable onPress={() => setEditOpen(true)} style={s.editBtn}>
+                    <Text style={s.name}>{fullName || 'User'}</Text>
+                    {user.username && <Text style={s.username}>@{user.username}</Text>}
+                    <Pressable
+                        onPress={() => setEditOpen(true)}
+                        style={s.editBtn}
+                        disabled={saving}
+                    >
                         <Text style={s.editBtnText}>{saving ? 'Saving...' : 'Edit Profile'}</Text>
                     </Pressable>
                 </View>
 
                 <Text style={s.sectionTitle}>Personal Information</Text>
                 <InfoRow label="Email" value={user.email || '—'} />
-                <InfoRow label="Phone Number" value={user.phone_number || '—'} />
+                <InfoRow label="Phone Number" value={user.phonenumber || user.phone_number || '—'} />
                 <InfoRow label="Birthday" value={user.birthday || '—'} />
                 <InfoRow label="Location" value={user.location || '—'} />
 
@@ -237,12 +245,12 @@ export default function Profile() {
                 onClose={() => setEditOpen(false)}
                 initial={{
                     name: fullName,
-                    username: user.username,
-                    email: user.email,
-                    phone: user.phone_number,
-                    birthday: user.birthday,
-                    location: user.location,
-                    profile_picture_url: user.profile_picture_url,
+                    username: user.username || '',
+                    email: user.email || '',
+                    phone: user.phonenumber || user.phone_number || '',
+                    birthday: user.birthday || '',
+                    location: user.location || '',
+                    profile_picture_url: avatarUrl,
                     allergies: allergiesToToggleMap(allergies),
                     otherAllergy: firstOther(allergies),
                 }}

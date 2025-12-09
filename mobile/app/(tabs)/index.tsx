@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx
+// mobile/app/(tabs)/index.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -6,24 +6,19 @@ import {
     ScrollView, RefreshControl, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { api as axios } from '@/lib/api';
+import { api } from '@/lib/api'; // Use shared API client
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
 
 type ApiPantry = {
     id: number;
     item_name: string;
-    expiration_date?: string | null; // 'YYYY-MM-DD'
+    expiration_date?: string | null;
     expired?: boolean | null;
-    created_at?: string; // ISO
-    updated_at?: string; // ISO
+    created_at?: string;
+    updated_at?: string;
+    image_url?: string | null;
 };
-
-function getBaseUrl() {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api/v1';
-    return 'http://127.0.0.1:3000/api/v1';
-}
-const API_BASE = getBaseUrl();
 
 /* ---------------- helpers ---------------- */
 
@@ -34,21 +29,25 @@ function parseISODate(s?: string | null): Date | null {
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
     return isNaN(d.getTime()) ? null : d;
 }
+
 function startOfDay(d: Date) {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+
 function daysBetween(a: Date, b: Date): number {
     const A = startOfDay(a).getTime();
     const B = startOfDay(b).getTime();
     return Math.round((A - B) / 86400000);
 }
+
 function daysUntil(iso?: string | null): number | null {
     const d = parseISODate(iso);
     if (!d) return null;
-    return daysBetween(d, new Date()); // positive => future
+    return daysBetween(d, new Date());
 }
+
 function formatRelative(d: Date) {
-    const diff = daysBetween(d, new Date()); // positive => future
+    const diff = daysBetween(d, new Date());
     if (diff === 0) return 'today';
     if (diff === 1) return 'tomorrow';
     if (diff === -1) return 'yesterday';
@@ -59,9 +58,8 @@ function formatRelative(d: Date) {
 
 export default function Home() {
     const router = useRouter();
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const { theme } = useTheme();
-
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     const [loading, setLoading] = useState(true);
@@ -69,26 +67,24 @@ export default function Home() {
     const [error, setError] = useState<string | null>(null);
     const [pantry, setPantry] = useState<ApiPantry[]>([]);
 
-    const api = useMemo(() => {
-        const inst = axios.create({ baseURL: API_BASE });
-        if (token) inst.defaults.headers.common.Authorization = `Bearer ${token}`;
-        return inst;
-    }, [token]);
-
     const fetchPantry = useCallback(async () => {
         try {
+            console.log('[Home] Fetching pantry...');
             setError(null);
             setLoading(true);
-            const { data } = await api.get('/pantries');
+
+            const { data } = await api.get('/api/v1/pantries');
             const rows: ApiPantry[] = Array.isArray(data) ? data : (data?.items || []);
+            console.log('[Home] Fetched', rows.length, 'items');
             setPantry(rows);
         } catch (e: any) {
+            console.error('[Home] Fetch error:', e?.response?.data || e.message);
             setError(e?.response?.data?.error || e?.message || 'Failed to load pantry');
             setPantry([]);
         } finally {
             setLoading(false);
         }
-    }, [api]);
+    }, []);
 
     useEffect(() => {
         fetchPantry();
@@ -106,7 +102,6 @@ export default function Home() {
     /* ---- computed summary ---- */
     const { total, soonCount, expiredCount, soonestLabel } = useMemo(() => {
         const total = pantry.length;
-
         let soon = 0, expired = 0;
         let minDays: number | null = null;
 
@@ -131,7 +126,7 @@ export default function Home() {
         return { total, soonCount: soon, expiredCount: expired, soonestLabel };
     }, [pantry]);
 
-    /* ---- recent activity (derived; no extra table) ---- */
+    /* ---- recent activity ---- */
     type ActivityEvent = { key: string; icon: string; title: string; subtitle: string; at: Date };
     const recentActivity: ActivityEvent[] = useMemo(() => {
         const now = new Date();
@@ -148,10 +143,9 @@ export default function Home() {
             const updated = p.updated_at ? new Date(p.updated_at) : null;
             const exp = parseISODate(p.expiration_date);
 
-            // Added (last 7 days)
             if (created && within7(p.created_at)) {
                 events.push({
-                    key: `added-${p.id}-${p.created_at}`,
+                    key: `added-${p.id}`,
                     icon: '＋',
                     title: 'Added',
                     subtitle: p.item_name,
@@ -159,10 +153,9 @@ export default function Home() {
                 });
             }
 
-            // Updated (last 7 days, not same timestamp as created)
             if (updated && created && updated.getTime() !== created.getTime() && within7(p.updated_at)) {
                 events.push({
-                    key: `updated-${p.id}-${p.updated_at}`,
+                    key: `updated-${p.id}`,
                     icon: '✎',
                     title: 'Updated',
                     subtitle: p.item_name,
@@ -170,12 +163,11 @@ export default function Home() {
                 });
             }
 
-            // Expiring soon (≤ 7 days)
             if (exp) {
                 const dLeft = daysUntil(p.expiration_date);
                 if (dLeft !== null && dLeft >= 0 && dLeft <= 7) {
                     events.push({
-                        key: `expiring-${p.id}-${p.expiration_date}`,
+                        key: `expiring-${p.id}`,
                         icon: '🕒',
                         title: 'Expiring Soon',
                         subtitle: `${p.item_name} • ${formatRelative(exp)}`,
@@ -184,12 +176,11 @@ export default function Home() {
                 }
             }
 
-            // Expired recently (expiry within last 7 days)
             const dLeft = daysUntil(p.expiration_date);
             const isExpired = p.expired === true || (dLeft !== null && dLeft < 0);
             if (isExpired && exp && Math.abs(daysBetween(exp, now)) <= 7) {
                 events.push({
-                    key: `expired-${p.id}-${p.expiration_date}`,
+                    key: `expired-${p.id}`,
                     icon: '⚠️',
                     title: 'Expired',
                     subtitle: `${p.item_name} • ${formatRelative(exp)}`,
@@ -202,13 +193,27 @@ export default function Home() {
         return events.slice(0, 10);
     }, [pantry]);
 
+    const displayName = user?.first_name || user?.username || user?.email?.split('@')[0] || 'there';
+
+    // Fix Google profile images - remove size params and use larger size
+    const avatarUrl = useMemo(() => {
+        const url = user?.avatar_url || user?.profile_picture_url;
+        if (!url) return 'https://i.pravatar.cc/100?img=12';
+
+        // If it's a Google profile image, strip size params and use s200-c for better quality
+        if (url.includes('googleusercontent.com')) {
+            return url.replace(/=s\d+-c/, '=s200-c');
+        }
+
+        return url;
+    }, [user]);
+
     return (
         <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
-            {/* Header */}
             <View style={s.header}>
                 <Pressable onPress={() => router.push('/profile')}>
                     <Image
-                        source={{ uri: (user as any)?.profile_picture_url || 'https://i.pravatar.cc/100?img=12' }}
+                        source={{ uri: avatarUrl }}
                         style={s.avatar}
                     />
                 </Pressable>
@@ -220,15 +225,13 @@ export default function Home() {
                 contentContainerStyle={{ paddingBottom: 24 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                {/* Card */}
                 <View style={s.card}>
                     <Text style={s.h1}>
-                        Welcome back, <Text style={{ color: theme.text }}>{user?.first_name || user?.username}</Text>!
+                        Welcome back, <Text style={{ color: theme.primary }}>{displayName}</Text>!
                     </Text>
                     <Text style={s.sub}>Pantry summary and recent activity.</Text>
                 </View>
 
-                {/* Summary */}
                 <Text style={s.sectionTitle}>Pantry Summary</Text>
 
                 {loading ? (
@@ -239,18 +242,17 @@ export default function Home() {
                 ) : (
                     <>
                         <View style={s.row}>
-                            <SummaryTile icon="🧺" title="Total Items" subtitle={`${total} item${total === 1 ? '' : 's'}`} />
-                            <SummaryTile icon="🕒" title="Expiring Soon" subtitle={soonCount > 0 ? `${soonCount} in ≤ 7 days` : soonestLabel} />
+                            <SummaryTile icon="🧺" title="Total Items" subtitle={`${total} item${total === 1 ? '' : 's'}`} onPress={() => router.push('/(tabs)/pantry')} />
+                            <SummaryTile icon="🕒" title="Expiring Soon" subtitle={soonCount > 0 ? `${soonCount} in ≤ 7 days` : soonestLabel} onPress={() => router.push('/(tabs)/pantry')} />
                         </View>
                         <View style={{ height: 12 }} />
                         <View style={s.row}>
-                            <SummaryTile icon="⚠️" title="Expired" subtitle={`${expiredCount} item${expiredCount === 1 ? '' : 's'}`} />
-                            <SummaryTile icon="📅" title="Soonest Expiry" subtitle={soonestLabel} />
+                            <SummaryTile icon="⚠️" title="Expired" subtitle={`${expiredCount} item${expiredCount === 1 ? '' : 's'}`} onPress={() => router.push('/(tabs)/pantry')} />
+                            <SummaryTile icon="📅" title="Soonest Expiry" subtitle={soonestLabel} onPress={() => router.push('/(tabs)/pantry')} />
                         </View>
                     </>
                 )}
 
-                {/* Activity */}
                 <Text style={[s.sectionTitle, { marginTop: 18 }]}>Recent Activity</Text>
                 {loading ? (
                     <View style={{ paddingVertical: 12 }}>
@@ -258,12 +260,12 @@ export default function Home() {
                     </View>
                 ) : recentActivity.length === 0 ? (
                     <View style={s.activity}>
-                        <View style={[s.activityIconWrap, { backgroundColor: theme.tint }]}>
-                            <Text style={[s.activityIcon, { color: theme.text }]}>ℹ️</Text>
+                        <View style={[s.activityIconWrap, { backgroundColor: theme.border }]}>
+                            <Text style={s.activityIcon}>ℹ️</Text>
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={s.activityTitle}>No recent activity</Text>
-                            <Text style={[s.activitySub, { color: theme.primary }]}>Add items or edit pantry to see updates.</Text>
+                            <Text style={[s.activitySub, { color: theme.textDim }]}>Add items to see updates.</Text>
                         </View>
                     </View>
                 ) : (
@@ -278,33 +280,31 @@ export default function Home() {
 
 /* ---------------- small components ---------------- */
 
-function SummaryTile({ icon, title, subtitle }:{ icon: string; title: string; subtitle: string }) {
+function SummaryTile({ icon, title, subtitle, onPress }: { icon: string; title: string; subtitle: string; onPress?: () => void }) {
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     return (
-        <View style={s.tile}>
-            <View style={[s.tileIconWrap, { backgroundColor: theme.tint }]}>
+        <Pressable style={s.tile} onPress={onPress}>
+            <View style={[s.tileIconWrap, { backgroundColor: theme.border }]}>
                 <Text style={s.tileIcon}>{icon}</Text>
             </View>
             <View style={{ flex: 1 }}>
                 <Text style={s.tileTitle}>{title}</Text>
-                <Pressable>
-                    <Text style={[s.tileLink, { color: theme.primary }]}>{subtitle}</Text>
-                </Pressable>
+                <Text style={[s.tileLink, { color: theme.primary }]}>{subtitle}</Text>
             </View>
-        </View>
+        </Pressable>
     );
 }
 
-function ActivityItem({ icon, title, subtitle }:{ icon: string; title: string; subtitle: string }) {
+function ActivityItem({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     return (
         <View style={s.activity}>
-            <View style={[s.activityIconWrap, { backgroundColor: theme.tint }]}>
-                <Text style={[s.activityIcon, { color: theme.text }]}>{icon}</Text>
+            <View style={[s.activityIconWrap, { backgroundColor: theme.border }]}>
+                <Text style={s.activityIcon}>{icon}</Text>
             </View>
             <View style={{ flex: 1 }}>
                 <Text style={s.activityTitle}>{title}</Text>
@@ -324,44 +324,31 @@ const makeStyles = (t: any) => StyleSheet.create({
     },
     headerTitle: { fontSize: 20, fontWeight: '800', color: t.text },
     avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.border },
-
     card: {
         marginTop: 8, backgroundColor: t.card, borderRadius: 16, padding: 16,
-        shadowColor: '#000',
-        shadowOpacity: t.name === 'light' ? 0.05 : 0.15,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
+        shadowColor: '#000', shadowOpacity: t.name === 'light' ? 0.05 : 0.15,
+        shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
     },
     h1: { fontSize: 28, fontWeight: '900', color: t.text },
     sub: { marginTop: 8, fontSize: 16, lineHeight: 22, color: t.textDim },
-
     sectionTitle: { marginTop: 16, marginBottom: 10, fontSize: 20, fontWeight: '800', color: t.text },
-
     row: { flexDirection: 'row', gap: 12 },
-
     tile: {
         flex: 1, flexDirection: 'row', gap: 12, backgroundColor: t.card, borderRadius: 16,
-        padding: 14, alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: t.name === 'light' ? 0.04 : 0.12,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 3 },
+        padding: 14, alignItems: 'center', shadowColor: '#000',
+        shadowOpacity: t.name === 'light' ? 0.04 : 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
     },
     tileIconWrap: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    tileIcon: { fontSize: 22, color: t.text },
-    tileTitle: { fontSize: 16, fontWeight: '800', color: t.text },
-    tileLink: { marginTop: 4, fontSize: 15, fontWeight: '700' },
-
+    tileIcon: { fontSize: 22 },
+    tileTitle: { fontSize: 14, fontWeight: '800', color: t.text },
+    tileLink: { marginTop: 4, fontSize: 13, fontWeight: '700' },
     activity: {
         flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.card,
-        borderRadius: 16, padding: 14, marginBottom: 10,
-        shadowColor: '#000',
-        shadowOpacity: t.name === 'light' ? 0.03 : 0.10,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 3 },
+        borderRadius: 16, padding: 14, marginBottom: 10, shadowColor: '#000',
+        shadowOpacity: t.name === 'light' ? 0.03 : 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
     },
     activityIconWrap: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     activityIcon: { fontSize: 20 },
-    activityTitle: { fontSize: 18, fontWeight: '800', color: t.text },
-    activitySub: { marginTop: 2, fontWeight: '700' },
+    activityTitle: { fontSize: 16, fontWeight: '800', color: t.text },
+    activitySub: { marginTop: 2, fontSize: 14, fontWeight: '600' },
 });
