@@ -71,7 +71,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Username (optional)"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     autoCapitalize="none"
                     value={username}
                     onChangeText={setUsername}
@@ -80,7 +80,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Email"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     autoCapitalize="none"
                     keyboardType="email-address"
                     value={email}
@@ -90,7 +90,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Password (min 8 chars)"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
@@ -99,7 +99,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Confirm password"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     secureTextEntry
                     value={confirm}
                     onChangeText={setConfirm}

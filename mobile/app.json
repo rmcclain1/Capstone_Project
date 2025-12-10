@@ -49,7 +49,7 @@
       "reactCompiler": false
     },
     "extra": {
-      "EXPO_PUBLIC_API_URL": "http://192.168.1.123:3000",
+      "EXPO_PUBLIC_API_URL": "https://cos-interventions-evanescence-canvas.trycloudflare.com",
       "router": {
         "origin": "https://recall-app.com"
       },

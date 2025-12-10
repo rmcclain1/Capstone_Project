@@ -1,19 +1,22 @@
 // mobile/app/scan/receipt.tsx
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, Alert, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadReceipt, getReceipt } from '@/api/receipts';
 import http from '@/lib/http';
+import { useRouter } from 'expo-router';
 
 export default function ReceiptScan() {
+    const router = useRouter();
     const [uri, setUri] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const [processingStatus, setProcessingStatus] = useState('');
 
     const pick = useCallback(async () => {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (perm.status !== 'granted') {
-            return Alert.alert('Permission required', 'Camera access is needed.');
+            return Alert.alert('Permission required', 'Camera access is needed to scan receipts.');
         }
 
         const r = await ImagePicker.launchCameraAsync({
@@ -24,24 +27,28 @@ export default function ReceiptScan() {
         if (!r.canceled && r.assets?.[0]?.uri) {
             setUri(r.assets[0].uri);
             setResult(null); // Clear previous results
+            setProcessingStatus('');
         }
     }, []);
 
-    const pollReceipt = async (receiptId: string, maxAttempts = 10): Promise<any> => {
+    const pollReceipt = async (receiptId: string, maxAttempts = 15): Promise<any> => {
         for (let i = 0; i < maxAttempts; i++) {
+            setProcessingStatus(`Processing receipt... (${i + 1}/${maxAttempts})`);
+
             const receipt = await getReceipt(receiptId);
 
             if (receipt.status === 'done') {
+                setProcessingStatus('Processing complete!');
                 return receipt;
             } else if (receipt.status === 'failed') {
-                throw new Error('Receipt processing failed');
+                throw new Error('Receipt processing failed on server');
             }
 
             // Wait 2 seconds before next poll
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
-        throw new Error('Receipt processing timeout');
+        throw new Error('Receipt processing timeout - please try again');
     };
 
     const submit = useCallback(async () => {
@@ -51,18 +58,45 @@ export default function ReceiptScan() {
         }
 
         setLoading(true);
+        setProcessingStatus('Uploading receipt...');
+
         try {
             const upload = await uploadReceipt(uri);
+            console.log('[Receipt] Upload response:', upload);
 
             if (upload.status === 'processing') {
+                setProcessingStatus('Receipt uploaded, processing...');
                 // Poll until complete
                 const done = await pollReceipt(upload.id);
                 setResult(done);
-            } else {
+
+                if (!done.items || done.items.length === 0) {
+                    Alert.alert(
+                        'No Items Found',
+                        'We couldn\'t detect any items in this receipt. Please try:\n\n• Better lighting\n• Clearer image\n• Flattening the receipt\n\nWould you like to try again?',
+                        [
+                            { text: 'Retry', onPress: pick },
+                            { text: 'Cancel', style: 'cancel' }
+                        ]
+                    );
+                }
+            } else if (upload.status === 'done') {
                 setResult(upload);
+            } else {
+                throw new Error('Unexpected upload status: ' + upload.status);
             }
         } catch (e: any) {
-            Alert.alert('Upload failed', e?.response?.data?.error || e.message);
+            console.error('[Receipt] Error:', e);
+            const errorMsg = e?.response?.data?.error || e.message || 'Upload failed';
+            Alert.alert(
+                'Upload Failed',
+                `${errorMsg}\n\nPlease try again with:\n• Better lighting\n• Less glare\n• Clearer image`,
+                [
+                    { text: 'Retry', onPress: pick },
+                    { text: 'Cancel', style: 'cancel' }
+                ]
+            );
+            setProcessingStatus('');
         } finally {
             setLoading(false);
         }
@@ -70,7 +104,7 @@ export default function ReceiptScan() {
 
     const addAll = useCallback(async () => {
         if (!result?.items?.length) {
-            Alert.alert('No items', 'No items found to add');
+            Alert.alert('No items', 'No items found to add to pantry');
             return;
         }
 
@@ -79,42 +113,53 @@ export default function ReceiptScan() {
             const promises = result.items.map((it: any) =>
                 http.post('/api/v1/pantries', {
                     pantry: {
-                        item_name: it.name || it.raw,
+                        item_name: it.name || it.raw || 'Unknown Item',
                         manufacturer: it.matched?.brand,
                         category: it.matched?.category,
                         image_url: it.matched?.image_url,
-                        
-                        // Default values
                         quantity: it.qty || 1,
                     }
                 })
             );
 
             await Promise.all(promises);
-            Alert.alert('Success', `Added ${result.items.length} items to pantry`);
+            Alert.alert(
+                'Success!',
+                `Added ${result.items.length} item${result.items.length > 1 ? 's' : ''} to your pantry`,
+                [{ text: 'View Pantry', onPress: () => router.push('/(tabs)/pantry') }]
+            );
 
             // Reset for next scan
             setUri(null);
             setResult(null);
+            setProcessingStatus('');
         } catch (e: any) {
             const msg = e?.response?.data?.errors?.join(', ') || e.message || 'Failed to add items';
             Alert.alert('Error', msg);
         } finally {
             setLoading(false);
         }
-    }, [result]);
+    }, [result, router]);
 
     return (
-        <View style={{ flex: 1, padding: 16 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
             {!uri ? (
-                <Pressable onPress={pick} style={styles.card}>
-                    <Text style={styles.btnText}>Take Receipt Photo</Text>
-                </Pressable>
+                <View>
+                    <Text style={styles.helpText}>
+                        Tips for best results:{'\n'}
+                        • Ensure good lighting{'\n'}
+                        • Flatten the receipt{'\n'}
+                        • Avoid glare and shadows
+                    </Text>
+                    <Pressable onPress={pick} style={styles.card}>
+                        <Text style={styles.btnText}>Take Receipt Photo</Text>
+                    </Pressable>
+                </View>
             ) : (
                 <>
                     <Image
                         source={{ uri }}
-                        style={{ width: '100%', height: 320, borderRadius: 12 }}
+                        style={{ width: '100%', height: 320, borderRadius: 12, marginBottom: 12 }}
                         resizeMode="contain"
                     />
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
@@ -127,7 +172,7 @@ export default function ReceiptScan() {
                         </Pressable>
                         <Pressable
                             onPress={submit}
-                            style={[styles.card, { flex: 1 }]}
+                            style={[styles.card, { flex: 1 }, loading && { opacity: 0.6 }]}
                             disabled={loading}
                         >
                             <Text style={styles.btnText}>Upload & Parse</Text>
@@ -138,29 +183,38 @@ export default function ReceiptScan() {
 
             {loading && (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" />
-                    <Text style={{ marginTop: 8 }}>Processing...</Text>
+                    <ActivityIndicator size="large" color="#2362FF" />
+                    <Text style={{ marginTop: 8, fontSize: 14, color: '#666' }}>
+                        {processingStatus || 'Processing...'}
+                    </Text>
                 </View>
             )}
 
             {result && !loading && (
                 <View style={{ marginTop: 16 }}>
-                    <Text style={styles.h}>Detected Items</Text>
+                    <Text style={styles.h}>Detected Items ({result.items?.length || 0})</Text>
                     {result.items?.length ? (
                         <>
                             {result.items.map((it: any, i: number) => (
                                 <View key={i} style={styles.itemRow}>
-                                    <Text style={{ flex: 1 }}>
-                                        {it.matched?.name || it.name || it.raw}
-                                    </Text>
-                                    <Text style={{ width: 40, textAlign: 'right' }}>
-                                        x{it.qty || 1}
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontWeight: '600', fontSize: 15 }}>
+                                            {it.matched?.name || it.name || it.raw || 'Unknown Item'}
+                                        </Text>
+                                        {it.matched?.brand && (
+                                            <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
+                                                {it.matched.brand}
+                                            </Text>
+                                        )}
+                                    </View>
+                                    <Text style={{ width: 50, textAlign: 'right', fontWeight: '600', fontSize: 15 }}>
+                                        × {it.qty || 1}
                                     </Text>
                                 </View>
                             ))}
                             <Pressable
                                 onPress={addAll}
-                                style={[styles.card, { marginTop: 12 }]}
+                                style={[styles.card, { marginTop: 16 }]}
                             >
                                 <Text style={styles.btnText}>
                                     Add All to Pantry ({result.items.length})
@@ -168,13 +222,18 @@ export default function ReceiptScan() {
                             </Pressable>
                         </>
                     ) : (
-                        <Text style={{ color: '#666', fontStyle: 'italic' }}>
-                            No items detected in receipt
-                        </Text>
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                            <Text style={{ color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
+                                No items detected in receipt.{'\n'}Try retaking with better lighting.
+                            </Text>
+                            <Pressable onPress={pick} style={[styles.card, styles.secondaryBtn, { marginTop: 12, width: '100%' }]}>
+                                <Text style={[styles.btnText, styles.secondaryText]}>Retake Photo</Text>
+                            </Pressable>
+                        </View>
                     )}
                 </View>
             )}
-        </View>
+        </ScrollView>
     );
 }
 
@@ -184,7 +243,8 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: '#2362FF',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        marginTop: 12,
     },
     secondaryBtn: {
         backgroundColor: '#f0f0f0',
@@ -193,26 +253,40 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: 'white',
-        fontWeight: '700'
+        fontWeight: '700',
+        fontSize: 16,
     },
     secondaryText: {
         color: '#333',
     },
     center: {
-        marginTop: 16,
+        marginTop: 24,
         gap: 8,
-        alignItems: 'center'
+        alignItems: 'center',
+        padding: 20,
     },
     h: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '700',
-        marginBottom: 8
+        marginBottom: 12,
+        color: '#111',
     },
     itemRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: '#ddd'
-    }
+        borderColor: '#ddd',
+        gap: 12,
+    },
+    helpText: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 22,
+        marginBottom: 8,
+        padding: 16,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+    },
 });
