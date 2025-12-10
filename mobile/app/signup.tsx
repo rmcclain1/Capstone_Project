@@ -71,6 +71,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Username (optional)"
+                    placeholderTextColor="#9CA3AF"
                     autoCapitalize="none"
                     value={username}
                     onChangeText={setUsername}
@@ -79,6 +80,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Email"
+                    placeholderTextColor="#9CA3AF"
                     autoCapitalize="none"
                     keyboardType="email-address"
                     value={email}
@@ -88,6 +90,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Password (min 8 chars)"
+                    placeholderTextColor="#9CA3AF"
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
@@ -96,6 +99,7 @@ export default function SignUp() {
                 <TextInput
                     style={styles.input}
                     placeholder="Confirm password"
+                    placeholderTextColor="#9CA3AF"
                     secureTextEntry
                     value={confirm}
                     onChangeText={setConfirm}
@@ -130,7 +134,15 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: '#fff' },
     container: { padding: 24, gap: 12 },
     title: { fontSize: 24, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
-    input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+    input: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 16,
+        color: '#111827',
+    },
     cta: { backgroundColor: '#111827', borderRadius: 12, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
     ctaText: { color: 'white', fontSize: 16, fontWeight: '700' },
     signupText: { textAlign: 'center', fontSize: 14, color: '#6B7280' },

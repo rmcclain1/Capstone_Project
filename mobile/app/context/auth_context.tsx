@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import {
     loginWithEmailPassword,
     loginWithGoogle,
+    loginWithApple,
     getSessionToken,
     logout as apiLogout,
 } from '@/api/auth';
@@ -37,6 +38,7 @@ type AuthContextShape = {
     login: (email: string, password: string) => Promise<void>;
     loginWithEmail: (email: string, password: string) => Promise<void>;
     loginWithGoogleFlow: () => Promise<void>;
+    loginWithAppleFlow: () => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     setUser: (u: User | null) => void;
@@ -241,6 +243,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    const loginWithAppleFlow = useCallback(async (): Promise<void> => {
+        setLoading(true);
+        try {
+            console.log('[Auth] Starting Apple login...');
+            const result = await loginWithApple();
+
+            if (!result.ok) {
+                console.log('[Auth] Apple login failed:', result.reason);
+                throw new Error(result.reason);
+            }
+
+            console.log('[Auth] Apple auth successful, checking for token...');
+
+            // Small delay to ensure backend has processed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const stored = await getSessionToken();
+            console.log('[Auth] Stored token after login:', stored ? 'exists' : 'MISSING');
+
+            if (!stored) {
+                throw new Error('Token not stored after login. Please try again.');
+            }
+
+            setToken(stored);
+            api.defaults.headers.common.Authorization = `Bearer ${stored}`;
+
+            // Retry logic for /me endpoint
+            console.log('[Auth] Fetching user data...');
+            let lastError: any;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`[Auth] Retry ${attempt}/2 - waiting 1s...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    const meRes = await api.get('/api/v1/me');
+                    console.log('[Auth] /me response:', meRes.data?.ok ? 'success' : 'failed');
+
+                    if (meRes.data?.ok) {
+                        setUser(normalizeUser(meRes.data.user));
+                        console.log('[Auth] Apple login complete, user set');
+                        return; // Success!
+                    }
+                } catch (e: any) {
+                    lastError = e;
+                    console.error(`[Auth] /me attempt ${attempt + 1} failed:`, e?.response?.data || e.message);
+                }
+            }
+
+            // All retries failed
+            throw lastError || new Error('Failed to fetch user data after Apple login');
+        } catch (e: any) {
+            console.error('[Auth] loginWithAppleFlow error:', e?.response?.data || e.message);
+            // Clean up on failure
+            setUser(null);
+            setToken(null);
+            delete api.defaults.headers.common.Authorization;
+            await apiLogout();
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(async () => {
         try {
             console.log('[Auth] Logging out...');
@@ -284,6 +352,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 loginWithEmail,
                 loginWithGoogleFlow,
+                loginWithAppleFlow,
                 logout,
                 refreshUser,
                 setUser,

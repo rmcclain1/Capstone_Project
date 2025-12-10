@@ -1,5 +1,5 @@
-// app/notifications/[id].tsx (or your route path)
-import React, { useMemo } from 'react';
+// app/notifications/[id].tsx
+import React, { useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -13,27 +13,79 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme_provider';
+import { deleteNotification, archiveNotification } from '@/api/notifications';
 
 export default function NotificationDetail() {
     const router = useRouter();
     const { theme } = useTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    const { title, body, from, timeAgo } = useLocalSearchParams<{
+    const { id, title, body, timeAgo, type, read } = useLocalSearchParams<{
+        id?: string;
         title?: string;
         body?: string;
-        from?: string;
         timeAgo?: string;
+        type?: string;
+        read?: string;
     }>();
 
-    const onDismiss = () => {
-        Alert.alert('Dismissed');
-        router.back();
+    const getNotificationIcon = (notifType?: string) => {
+        switch (notifType) {
+            case 'expiring_soon': return 'time-outline';
+            case 'expiring_today': return 'alert-circle-outline';
+            case 'expired': return 'close-circle-outline';
+            case 'low_stock': return 'trending-down-outline';
+            default: return 'notifications-outline';
+        }
     };
 
-    const onArchive = () => {
-        Alert.alert('Archived');
-        router.back();
+    const getNotificationColor = (notifType?: string) => {
+        switch (notifType) {
+            case 'expiring_soon': return '#F59E0B';
+            case 'expiring_today': return '#EF4444';
+            case 'expired': return '#DC2626';
+            case 'low_stock': return '#3B82F6';
+            default: return theme.primary;
+        }
+    };
+
+    const onDismiss = async () => {
+        if (!id) return;
+
+        Alert.alert(
+            'Delete Notification',
+            'Are you sure you want to delete this notification?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setIsDeleting(true);
+                        try {
+                            await deleteNotification(id);
+                            router.back();
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to delete notification');
+                            setIsDeleting(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const onArchive = async () => {
+        if (!id) return;
+
+        try {
+            await archiveNotification(id);
+            Alert.alert('Archived', 'Notification has been archived');
+            router.back();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to archive notification');
+        }
     };
 
     return (
@@ -53,23 +105,40 @@ export default function NotificationDetail() {
             </View>
 
             <ScrollView contentContainerStyle={s.content}>
+                {/* Icon Badge */}
+                <View style={[s.iconBadge, { backgroundColor: getNotificationColor(type) + '20' }]}>
+                    <Ionicons
+                        name={getNotificationIcon(type) as any}
+                        size={32}
+                        color={getNotificationColor(type)}
+                    />
+                </View>
+
                 <Text style={s.title}>
-                    {title ?? 'New Recipe Alert: Spicy Chicken Tacos'}
+                    {title ?? 'Notification'}
                 </Text>
 
                 <Text style={s.body}>
-                    {body ??
-                        "Chef Isabella Rossi just shared a new recipe for Spicy Chicken Tacos. It’s a must-try for your next Taco Tuesday!"}
+                    {body ?? 'No additional details available.'}
                 </Text>
 
-                <Pressable
-                    onPress={() => {}}
-                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                >
-                    <Text style={s.meta}>From: {from ?? 'Chef Isabella Rossi'}</Text>
-                </Pressable>
+                <View style={s.metaContainer}>
+                    <Ionicons name="time-outline" size={16} color={theme.textDim} />
+                    <Text style={s.meta}>Received: {timeAgo ?? 'Unknown'}</Text>
+                </View>
 
-                <Text style={s.meta}>Received: {timeAgo ?? '2 hours ago'}</Text>
+                {type && (
+                    <View style={s.metaContainer}>
+                        <Ionicons name="pricetag-outline" size={16} color={theme.textDim} />
+                        <Text style={s.meta}>Type: {type.replace(/_/g, ' ')}</Text>
+                    </View>
+                )}
+
+                {read === 'false' && (
+                    <View style={s.badge}>
+                        <Text style={s.badgeText}>Unread</Text>
+                    </View>
+                )}
             </ScrollView>
 
             {/* Footer */}
@@ -77,15 +146,19 @@ export default function NotificationDetail() {
                 <Pressable
                     style={s.ghostBtn}
                     onPress={onDismiss}
+                    disabled={isDeleting}
                     android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
                 >
-                    <Text style={s.ghostText}>Dismiss</Text>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                    <Text style={[s.ghostText, { color: '#EF4444' }]}>Delete</Text>
                 </Pressable>
                 <Pressable
                     style={s.primaryBtn}
                     onPress={onArchive}
+                    disabled={isDeleting}
                     android_ripple={Platform.OS === 'android' ? { color: theme.primary } : undefined}
                 >
+                    <Ionicons name="archive-outline" size={18} color={theme.primary ?? '#fff'} />
                     <Text style={s.primaryText}>Archive</Text>
                 </Pressable>
             </View>
@@ -118,24 +191,58 @@ const makeStyles = (t: any) =>
         },
         headerTitle: { fontSize: 18, fontWeight: '800', color: t.text },
         content: { padding: 16, paddingBottom: 120 },
+        iconBadge: {
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            alignSelf: 'center',
+            marginBottom: 16,
+        },
         title: {
             fontSize: 24,
             fontWeight: '900',
             color: t.text,
             marginBottom: 12,
+            textAlign: 'center',
         },
         body: {
             fontSize: 16,
-            lineHeight: 22,
+            lineHeight: 24,
             color: t.textDim,
-            marginBottom: 18,
+            marginBottom: 24,
+            textAlign: 'center',
+        },
+        metaContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 8,
         },
         meta: {
+            color: t.textDim,
+            fontWeight: '600',
+            fontSize: 14,
+        },
+        badge: {
+            backgroundColor: t.primary + '20',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+            alignSelf: 'flex-start',
+            marginTop: 16,
+        },
+        badgeText: {
             color: t.primary,
             fontWeight: '700',
-            marginTop: 6,
+            fontSize: 12,
         },
         footer: {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
             margin: 24,
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -145,8 +252,11 @@ const makeStyles = (t: any) =>
             flex: 1,
             backgroundColor: t.inputBg,
             borderRadius: 12,
-            paddingVertical: 12,
+            paddingVertical: 14,
             alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 6,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
         },
@@ -155,8 +265,11 @@ const makeStyles = (t: any) =>
             flex: 1,
             backgroundColor: t.primary,
             borderRadius: 12,
-            paddingVertical: 12,
+            paddingVertical: 14,
             alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 6,
         },
         primaryText: { fontWeight: '800', color: t.onPrimary ?? '#fff' },
     });

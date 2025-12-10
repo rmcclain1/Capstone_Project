@@ -7,6 +7,10 @@ import {
   firebaseUpdatePassword,
 } from '@/lib/emailPassword';
 import { postToRails, clearRailsJwt, getRailsJwt } from '@/api/session';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { Platform } from 'react-native';
+import http from '@/lib/http';
+import * as SecureStore from 'expo-secure-store';
 
 type Ok<T> = { ok: true; user?: T };
 type Err = { ok: false; reason: string; code?: string };
@@ -50,6 +54,65 @@ export async function loginWithGoogle(): Promise<Result<any>> {
     return { ok: true, user: session.user };
   } catch (e: any) {
     return { ok: false, reason: friendlyFirebaseMessage(e?.code), code: e?.code };
+  }
+}
+
+// Apple sign-in
+export async function loginWithApple(): Promise<Result<any>> {
+  try {
+    // Only available on iOS
+    if (Platform.OS !== 'ios') {
+      return { ok: false, reason: 'Apple Sign-In is only available on iOS' };
+    }
+
+    // Check if Apple Sign-In is available
+    const isAvailable = await AppleAuthentication.isAvailableAsync();
+    if (!isAvailable) {
+      return { ok: false, reason: 'Apple Sign-In is not available on this device' };
+    }
+
+    // Request Apple credentials
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+
+    console.log('[Apple Sign-In] Got credential:', {
+      user: credential.user,
+      email: credential.email,
+      fullName: credential.fullName,
+    });
+
+    // Send to Rails backend
+    const response = await http.post('/api/v1/sessions/apple', {
+      identity_token: credential.identityToken,
+      user_info: {
+        email: credential.email,
+        name: credential.fullName
+          ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim()
+          : undefined,
+      },
+    });
+
+    if (!response.data?.ok) {
+      return { ok: false, reason: response.data?.error || 'Apple sign-in failed' };
+    }
+
+    // Store the Rails JWT
+    const token = response.data.token;
+    if (token) {
+      await SecureStore.setItemAsync('rails_jwt', token);
+    }
+
+    return { ok: true, user: response.data.user };
+  } catch (e: any) {
+    if (e.code === 'ERR_REQUEST_CANCELED') {
+      return { ok: false, reason: 'Sign-in was canceled' };
+    }
+    console.error('[Apple Sign-In] Error:', e);
+    return { ok: false, reason: e?.message || 'Apple sign-in failed' };
   }
 }
 

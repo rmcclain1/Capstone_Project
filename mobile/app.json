@@ -10,10 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.recallapp.app",
+      "bundleIdentifier": "recall-app-2b6c6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.recallapp.app",
@@ -38,6 +39,9 @@
       ],
       [
         "expo-secure-store"
+      ],
+      [
+        "expo-apple-authentication"
       ]
     ],
     "experiments": {

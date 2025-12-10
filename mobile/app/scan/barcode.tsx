@@ -31,9 +31,32 @@ export default function BarcodeScan() {
     const handleAddToPantry = async (barcodeData: string) => {
         console.log('Adding barcode to pantry:', barcodeData);
 
+        // Validate barcode format (UPC-A, UPC-E, EAN-13, EAN-8)
+        const isValidUPC = /^\d{8,13}$/.test(barcodeData);
+        if (!isValidUPC) {
+            Alert.alert(
+                'Invalid Barcode',
+                'This barcode format is not supported. Please try again or enter manually.',
+                [
+                    { text: 'Try Again', onPress: () => setScanned(false) },
+                    { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
+                    { text: 'Cancel', onPress: () => router.back() },
+                ]
+            );
+            return;
+        }
+
         try {
-            // Look up product from OpenFoodFacts
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcodeData}.json`);
+            // Look up product from OpenFoodFacts with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+            const response = await fetch(
+                `https://world.openfoodfacts.org/api/v0/product/${barcodeData}.json`,
+                { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+
             const data = await response.json();
 
             if (data.status === 1 && data.product) {
@@ -62,10 +85,10 @@ export default function BarcodeScan() {
                     [{ text: 'OK', onPress: () => router.replace('/(tabs)/pantry') }]
                 );
             } else {
-                // Product not found, ask user for name
+                // Product not found in OpenFoodFacts database
                 Alert.prompt(
                     'Product Not Found',
-                    'Enter product name to add to pantry:',
+                    `Barcode ${barcodeData} not found in database.\n\nEnter product name to add manually:`,
                     async (name) => {
                         if (name && name.trim()) {
                             try {
@@ -81,6 +104,8 @@ export default function BarcodeScan() {
                             } catch (error: any) {
                                 Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item');
                             }
+                        } else {
+                            setScanned(false); // Allow scanning again
                         }
                     },
                     'plain-text'
@@ -88,7 +113,29 @@ export default function BarcodeScan() {
             }
         } catch (error: any) {
             console.error('Error adding to pantry:', error);
-            Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item to pantry');
+
+            if (error.name === 'AbortError') {
+                Alert.alert(
+                    'Request Timeout',
+                    'Product lookup took too long. Would you like to try again or enter manually?',
+                    [
+                        { text: 'Retry', onPress: () => { setScanned(false); handleAddToPantry(barcodeData); } },
+                        { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
+                        { text: 'Cancel', style: 'cancel' },
+                    ]
+                );
+            } else {
+                Alert.alert(
+                    'Error',
+                    error?.response?.data?.errors?.join(', ') || 'Failed to add item to pantry',
+                    [
+                        { text: 'Try Again', onPress: () => setScanned(false) },
+                        { text: 'Cancel', onPress: () => router.back() },
+                    ]
+                );
+            }
+
+            setScanned(false);
         }
     };
 

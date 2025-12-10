@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_09_053858) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_10_213854) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -220,6 +220,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_09_053858) do
     t.string "provider"
     t.string "avatar_url"
     t.string "expo_push_token"
+    t.string "apple_uid"
+    t.index ["apple_uid"], name: "index_users_on_apple_uid", unique: true
     t.index ["expo_push_token"], name: "index_users_on_expo_push_token"
     t.index ["firebase_uid"], name: "index_users_on_firebase_uid", unique: true
   end

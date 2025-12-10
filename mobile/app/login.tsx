@@ -1,5 +1,5 @@
 // mobile/app/login.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TextInput,
     StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView,
@@ -7,16 +7,30 @@ import {
 import { useAuth } from '@/app/context/auth_context';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingGoogle, setLoadingGoogle] = useState(false);
+    const [loadingApple, setLoadingApple] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
 
     const router = useRouter();
-    const { login, loginWithGoogleFlow } = useAuth();
+    const { login, loginWithGoogleFlow, loginWithAppleFlow } = useAuth();
+
+    // Check if Apple Sign-In is available (iOS only)
+    useEffect(() => {
+        async function checkAppleSignIn() {
+            if (Platform.OS === 'ios') {
+                const available = await AppleAuthentication.isAvailableAsync();
+                setAppleSignInAvailable(available);
+            }
+        }
+        checkAppleSignIn();
+    }, []);
 
     const validateEmail = (s: string) => /^\S+@\S+\.\S+$/.test(s);
 
@@ -64,6 +78,23 @@ export default function LoginScreen() {
         }
     };
 
+    const handleApple = async () => {
+        setError(null);
+        setLoadingApple(true);
+        try {
+            console.log('[Login] Attempting Apple login...');
+            await loginWithAppleFlow();
+            console.log('[Login] Apple success! Navigating to tabs...');
+            router.replace('/(tabs)');
+        } catch (e: any) {
+            console.error('[Login] Apple error:', e);
+            const errorMessage = e?.message || e?.response?.data?.error || 'Apple sign-in failed.';
+            setError(errorMessage);
+        } finally {
+            setLoadingApple(false);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.safe}>
             <KeyboardAvoidingView
@@ -94,7 +125,7 @@ export default function LoginScreen() {
                         value={email}
                         onChangeText={setEmail}
                         style={styles.input}
-                        editable={!loading && !loadingGoogle}
+                        editable={!loading && !loadingGoogle && !loadingApple}
                     />
                     <TextInput
                         placeholder="Password"
@@ -103,15 +134,26 @@ export default function LoginScreen() {
                         value={password}
                         onChangeText={setPassword}
                         style={[styles.input, { marginTop: 12 }]}
-                        editable={!loading && !loadingGoogle}
+                        editable={!loading && !loadingGoogle && !loadingApple}
                         onSubmitEditing={handleLogin}
                         returnKeyType="done"
                     />
 
+                    {/* Forgot Password Link */}
                     <TouchableOpacity
-                        style={[styles.cta, (loading || loadingGoogle) && { opacity: 0.6 }]}
+                        onPress={() => router.push('/auth/reset-password')}
+                        style={{ alignSelf: 'flex-end', marginTop: -8, marginBottom: 8 }}
+                        disabled={loading || loadingGoogle || loadingApple}
+                    >
+                        <Text style={{ color: '#2362FF', fontSize: 14, fontWeight: '600' }}>
+                            Forgot password?
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.cta, (loading || loadingGoogle || loadingApple) && { opacity: 0.6 }]}
                         onPress={handleLogin}
-                        disabled={loading || loadingGoogle}
+                        disabled={loading || loadingGoogle || loadingApple}
                     >
                         {loading ? (
                             <ActivityIndicator color="#fff" />
@@ -129,7 +171,7 @@ export default function LoginScreen() {
                     <TouchableOpacity
                         style={styles.social}
                         onPress={handleGoogle}
-                        disabled={loading || loadingGoogle}
+                        disabled={loading || loadingGoogle || loadingApple}
                     >
                         {loadingGoogle ? (
                             <ActivityIndicator color="#111827" />
@@ -141,10 +183,28 @@ export default function LoginScreen() {
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.social, { opacity: 0.6 }]} disabled>
-                        <Ionicons name="logo-apple" size={22} color="#111827" style={{ marginRight: 10 }} />
-                        <Text style={styles.socialText}>Continue with Apple (dev build)</Text>
-                    </TouchableOpacity>
+                    {/* Apple Sign-In Button - Only show on iOS when available */}
+                    {appleSignInAvailable ? (
+                        <TouchableOpacity
+                            style={styles.social}
+                            onPress={handleApple}
+                            disabled={loading || loadingGoogle || loadingApple}
+                        >
+                            {loadingApple ? (
+                                <ActivityIndicator color="#111827" />
+                            ) : (
+                                <>
+                                    <Ionicons name="logo-apple" size={22} color="#111827" style={{ marginRight: 10 }} />
+                                    <Text style={styles.socialText}>Continue with Apple</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity style={[styles.social, { opacity: 0.6 }]} disabled>
+                            <Ionicons name="logo-apple" size={22} color="#111827" style={{ marginRight: 10 }} />
+                            <Text style={styles.socialText}>Continue with Apple (iOS only)</Text>
+                        </TouchableOpacity>
+                    )}
 
                     <Text style={styles.legal}>
                         By clicking continue, you agree to our{' '}

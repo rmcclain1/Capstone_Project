@@ -2,7 +2,8 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.42:3000'; // Default to LAN URL
+// CHANGE THIS TO YOUR CLOUDFLARE TUNNEL URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://YOUR-TUNNEL-URL-HERE.trycloudflare.com';
 
 export const http = axios.create({
     baseURL: API_URL,

@@ -1,6 +1,6 @@
 class Api::V1::SessionsController < ApplicationController
   # Clients hit this WITHOUT a Rails JWT (they only have a Firebase ID token)
-  skip_before_action :authorize_request, only: [:create]
+  skip_before_action :authorize_request, only: [:create, :apple]
 
   include AuthenticateFirebase
 
@@ -31,8 +31,48 @@ class Api::V1::SessionsController < ApplicationController
     token = JsonWebToken.encode(user_id: user.id)
     render json: { ok: true, token: token, user: user_payload(user) }, status: :ok
   rescue => e
-    # Log the real cause so 401s aren’t silent
+    # Log the real cause so 401s aren't silent
     Rails.logger.error("[sessions#create] #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}")
+    render json: { ok: false, error: e.message }, status: :unauthorized
+  end
+
+  # POST /api/v1/sessions/apple
+  # Expect: { identity_token: <APPLE_IDENTITY_TOKEN>, user_info: { email, name } }
+  # Return: { ok: true, token: <RAILS_JWT>, user: {...} }
+  def apple
+    identity_token = params[:identity_token]
+    user_info = params[:user_info] || {}
+
+    return render json: { ok: false, error: 'Missing identity token' }, status: :unauthorized unless identity_token
+
+    # Verify the Apple identity token
+    result = AppleSignInService.verify_identity_token(identity_token)
+
+    unless result[:success]
+      return render json: { ok: false, error: result[:error] || 'Apple verification failed' }, status: :unauthorized
+    end
+
+    # Find or create user with Apple ID
+    user = User.find_or_initialize_by(apple_uid: result[:user_id])
+    
+    # Update user info (only if not already set)
+    user.email ||= result[:email] || user_info[:email]
+    user.provider ||= 'apple.com'
+    
+    # Parse name from user_info if provided (only on first sign-in)
+    if user_info[:name].present? && user.first_name.blank?
+      name_parts = user_info[:name].to_s.split(' ')
+      user.first_name = name_parts.first
+      user.last_name = name_parts.drop(1).join(' ').presence
+    end
+
+    user.save!
+
+    # Generate Rails JWT
+    token = JsonWebToken.encode(user_id: user.id)
+    render json: { ok: true, token: token, user: user_payload(user) }, status: :ok
+  rescue => e
+    Rails.logger.error("[sessions#apple] #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}")
     render json: { ok: false, error: e.message }, status: :unauthorized
   end
 
@@ -61,6 +101,7 @@ class Api::V1::SessionsController < ApplicationController
       avatar_url: u.try(:avatar_url),
       provider: u.try(:provider),
       firebase_uid: u.try(:firebase_uid),
+      apple_uid: u.try(:apple_uid),
 
       # If you don't have a `location` column, this will just be nil instead of raising.
       state: u.try(:location)

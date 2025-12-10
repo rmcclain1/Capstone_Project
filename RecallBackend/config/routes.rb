@@ -50,6 +50,7 @@ Rails.application.routes.draw do
 
       # Firebase ID token -> Rails JWT exchange + session endpoints
       post   '/sessions', to: 'sessions#create'
+      post   '/sessions/apple', to: 'sessions#apple'
       delete '/sessions', to: 'sessions#destroy'
       get    '/me',       to: 'sessions#me'
 
