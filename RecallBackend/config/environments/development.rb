@@ -70,4 +70,8 @@ Rails.application.configure do
 
   # Allow Cloudflare quick tunnel hosts in development
   config.hosts << /.*\.trycloudflare\.com/
+
+  # Allow Cloudflare / tunnel host
+  config.hosts << "api.consumesafe.app"
+
 end
