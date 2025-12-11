@@ -73,8 +73,8 @@ export default function AIScreen() {
         }
     }, [input, messages, loading]);
 
-    const inputBarHeight = 64;
-    const bottomReserve = Math.max(tabBarHeight, 0) + inputBarHeight + 12;
+    const inputBarHeight = 72;
+    const bottomPadding = tabBarHeight + inputBarHeight + 8;
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top']}>
@@ -120,22 +120,24 @@ export default function AIScreen() {
                     ) : null
                 }
                 contentContainerStyle={{
-                    paddingBottom: bottomReserve,
+                    paddingBottom: bottomPadding,
                     paddingTop: 8,
                 }}
+                keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* Input bar */}
+            {/* Input bar - wrapped with KeyboardAvoidingView for smooth keyboard handling */}
             <KeyboardAvoidingView
-                behavior={Platform.select({ ios: 'padding', android: undefined })}
-                keyboardVerticalOffset={tabBarHeight}
+                behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+                keyboardVerticalOffset={0}
+                style={styles.keyboardView}
             >
                 <View
                     style={[
                         styles.inputBar,
                         {
-                            bottom: Math.max(tabBarHeight, 0),
+                            bottom: tabBarHeight,
                             backgroundColor: theme.bg,
                             borderTopColor: theme.border,
                         },
@@ -225,6 +227,12 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: 14,
+    },
+    keyboardView: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
     },
     inputBar: {
         position: 'absolute',

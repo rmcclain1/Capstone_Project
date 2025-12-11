@@ -68,5 +68,7 @@ group :development, :test do
   #apple login
   gem "apple_id"
 
+  gem 'kaminari'
+  
 
 end

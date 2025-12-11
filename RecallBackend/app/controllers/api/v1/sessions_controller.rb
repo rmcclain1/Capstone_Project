@@ -18,7 +18,8 @@ class Api::V1::SessionsController < ApplicationController
     user = User.find_or_initialize_by(firebase_uid: payload['user_id'])
     user.email      ||= payload['email']
     user.provider   ||= (payload.dig('firebase', 'sign_in_provider') || 'password')
-    user.avatar_url ||= payload['picture']
+    user.avatar_url = payload['picture'] if user.avatar_url.blank? && payload['picture'].present?
+
 
     if payload['name'].present? && user.first_name.blank? && user.last_name.blank?
       parts = payload['name'].split(' ')
