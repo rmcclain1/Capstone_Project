@@ -1,5 +1,5 @@
 // mobile/api/receipts.ts
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import http from '@/lib/http';
 
 export type ReceiptStatus = 'processing' | 'done' | 'failed';

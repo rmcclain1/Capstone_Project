@@ -12,15 +12,14 @@ import {
     Pressable,
     TextInput,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/constants/theme_provider';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-// this would be used to keep track of the country of origin.
 const COUNTRIES = ['United States', 'Canada', 'Mexico', 'United Kingdom', 'Germany', 'Japan'];
 
-// this represents a blueprint for what data the component expects.
 type Props = {
     visible: boolean;
     onClose: () => void;
@@ -34,7 +33,18 @@ type Props = {
         country?: string;
         allergens?: string;
     }) => void;
+    onUpdate?: (itemId: string, data: {
+        name: string;
+        imageUri?: string;
+        expiresAt?: string;
+        manufacturer?: string;
+        lotNumber?: string;
+        quantity?: string;
+        country?: string;
+        allergens?: string;
+    }) => Promise<void>;
     item?: PantryItem | null;
+    mode?: 'view' | 'edit' | 'add';
 };
 
 type PantryItem = {
@@ -45,29 +55,24 @@ type PantryItem = {
     status?: 'soon' | 'expired' | 'ok';
     expiring?: boolean;
     expiresAt?: string;
+    manufacturer?: string;
+    lotNumber?: string;
+    quantity?: string;
+    country?: string;
+    allergens?: string;
 };
 
-// React Funtional Component - This is our modal.
-// Destructures the incoming props according to the Props type defined earlier.
-export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: Props) {
-
-    // We have a structure ... now we begin developing the modal
-    // Visuals:
+export default function ItemDetailsModal({ visible, onClose, onSubmit, onUpdate, item, mode = 'view' }: Props) {
     const { theme } = useTheme();
-
-    // this line is performing two things - memoization and dynamic styling
-    // this is used to caches results and recomputes them when 'theme' changes.
-    // 'makeStyles' generates a style object.
     const styles = useMemo(() => makeStyles(theme), [theme]);
 
-    // Animations
     const backdrop = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(40)).current;
-
-    // Placeholder Color Scheme
     const placeholder = theme?.muted ?? '#9AA3AF';
 
-    // Animations - These handle the opening and closing animations for the modal we're developinng in this file.
+    const [isEditing, setIsEditing] = useState(mode === 'edit' || mode === 'add');
+    const [saving, setSaving] = useState(false);
+
     const open = () => {
         Animated.parallel([
             Animated.timing(backdrop, { toValue: 1, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
@@ -81,7 +86,6 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
         ]).start(({ finished }) => finished && onClose());
     };
 
-    // These are properties of the modal, this will be used to display and/or modify the data.
     const [imageUri, setImageUri] = useState<string | undefined>();
     const [name, setName] = useState('');
     const [expiresAt, setExpiresAt] = useState('');
@@ -90,20 +94,26 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
     const [quantity, setQuantity] = useState('');
     const [country, setCountry] = useState<string | undefined>();
     const [allergens, setAllergens] = useState('');
+    const [notes, setNotes] = useState('');
     const [countryOpen, setCountryOpen] = useState(false);
 
     React.useEffect(() => {
         if (visible && item) {
             setImageUri(item.image || undefined);
             setName(item.name || '');
+            setExpiresAt(item.expiresAt || '');
+            setManufacturer(item.manufacturer || '');
+            setLotNumber(item.lotNumber || '');
+            setQuantity(item.quantity || '');
+            setCountry(item.country);
+            setAllergens(item.allergens || '');
+            setIsEditing(mode === 'edit' || mode === 'add');
+        } else if (visible && !item) {
+            // Adding new item
+            setIsEditing(true);
         }
-    }, [visible, item]);
+    }, [visible, item, mode]);
 
-    /**
-     * This is a helper function designed to reset the modal's state then close it.
-     * Very straightforward, we're simply altering every value and assigning, essentially, nothing! Blank space.
-     * After each field is changed, we close the modal.
-     */
     const resetAndClose = () => {
         setName('');
         setImageUri(undefined);
@@ -113,31 +123,27 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
         setQuantity('');
         setCountry(undefined);
         setAllergens('');
+        setNotes('');
+        setIsEditing(false);
         close();
     };
 
-    /**
-     * This is an arrow function, this returns a boolean to tell if a string looks like a valid image URL.
-     */
     const isValidImageUrl = (u?: string) => !!u && /^https?:\/\/.+/i.test(u.trim());
 
-    const submit = () => {
-
+    const handleSave = async () => {
         const trimmedName = name.trim();
 
-        // Error-Handling
         if (!trimmedName) {
             Alert.alert('Missing name', 'Please enter an item name.');
             return;
         }
 
-        // Error-Handling
         if (imageUri && !isValidImageUrl(imageUri)) {
             Alert.alert('Invalid image URL', 'Please paste a valid http(s) image URL.');
             return;
         }
 
-        onSubmit?.({
+        const data = {
             name: trimmedName,
             imageUri: imageUri?.trim() || undefined,
             expiresAt: expiresAt.trim() || undefined,
@@ -146,13 +152,26 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
             quantity: quantity.trim() || undefined,
             country: country?.trim() || undefined,
             allergens: allergens.trim() || undefined,
-        });
+        };
 
-        // Submitting will reset the field inputs and close the modal
-        // NOTE - THIS MAY NEED TO BE MODIFIED, WE MAY NOT WANT THIS DESIRED OUTPUT.
-        resetAndClose();
+        if (item?.id && onUpdate) {
+            // Update existing item
+            try {
+                setSaving(true);
+                await onUpdate(item.id, data);
+                setIsEditing(false);
+                resetAndClose();
+            } catch (error) {
+                // Error handled by parent
+            } finally {
+                setSaving(false);
+            }
+        } else if (onSubmit) {
+            // Create new item
+            onSubmit(data);
+            resetAndClose();
+        }
     };
-
 
     const getExpirationCountdown = (dateStr?: string) => {
         if (!dateStr) return 'No expiration date set';
@@ -176,17 +195,21 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
                             onPress={resetAndClose}
                             style={styles.roundIcon}
                             hitSlop={12}
-                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
                         >
                             <Ionicons name="close" size={20} color={theme.text} />
                         </Pressable>
-                        <Text style={styles.title}>Item Summary</Text>
-                        <View style={{ width: 36 }} />
+                        <Text style={styles.title}>
+                            {isEditing ? (item ? 'Edit Item' : 'Add Item') : 'Item Details'}
+                        </Text>
+                        {!isEditing && item && (
+                            <Pressable onPress={() => setIsEditing(true)} hitSlop={12}>
+                                <Ionicons name="create-outline" size={24} color={theme.primary} />
+                            </Pressable>
+                        )}
+                        {isEditing && <View style={{ width: 36 }} />}
                     </View>
 
                     <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-
-
                         {/* Image Preview */}
                         <Image
                             source={{
@@ -200,86 +223,195 @@ export default function ItemDetailsModal({ visible, onClose, onSubmit, item }: P
                             resizeMode="cover"
                         />
 
-                        {/* Main Info */}
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.infoTitle}>{item?.name || 'Unnamed Item'}</Text>
-                            {!!item?.sub && <Text style={styles.infoSub}>{item.sub}</Text>}
+                        {isEditing ? (
+                            /* EDIT MODE */
+                            <>
+                                <Text style={styles.label}>Item Name *</Text>
+                                <TextInput
+                                    placeholder="e.g., Milk, Bread, Eggs"
+                                    placeholderTextColor={placeholder}
+                                    value={name}
+                                    onChangeText={setName}
+                                    style={styles.input}
+                                />
 
-                            {item?.status && (
-                                <View
-                                    style={[
-                                        styles.statusBadge,
-                                        item.status === 'expired'
-                                            ? { backgroundColor: theme.danger || '#EF4444' }
-                                            : item.status === 'soon'
-                                                ? { backgroundColor: theme.primary }
-                                                : { backgroundColor: '#4CAF50' },
-                                    ]}
-                                >
-                                    <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
-                                </View>
-                            )}
-                        </View>
+                                <Text style={styles.label}>Image URL</Text>
+                                <TextInput
+                                    placeholder="https://..."
+                                    placeholderTextColor={placeholder}
+                                    value={imageUri}
+                                    onChangeText={setImageUri}
+                                    style={styles.input}
+                                    autoCapitalize="none"
+                                />
 
-                        {/* Countdown */}
-                        <View style={styles.sectionCard}>
-                            <Text style={styles.sectionHeader}><Text style={{ fontWeight: '800' }}>Time Remaining</Text></Text>
-                            <View style={styles.countdownContainer}>
-                                <Ionicons name="time-outline" size={18} color={theme.primary} />
-                                <Text style={styles.countdownText}>
-                                    {getExpirationCountdown(item?.expiresAt)}
-                                </Text>
-                            </View>
-                        </View>
+                                <Text style={styles.label}>Expiration Date (MM/DD/YYYY)</Text>
+                                <TextInput
+                                    placeholder="12/31/2025"
+                                    placeholderTextColor={placeholder}
+                                    value={expiresAt}
+                                    onChangeText={setExpiresAt}
+                                    style={styles.input}
+                                    keyboardType="numbers-and-punctuation"
+                                />
 
-                        {/* 🧠 Smart Suggestions */}
-                        {(item?.status === 'soon' || item?.status === 'expired') && (
-                            <View style={styles.suggestionContainer}>
-                                <Text style={styles.sectionHeader}>Smart Suggestions</Text>
+                                <Text style={styles.label}>Manufacturer</Text>
+                                <TextInput
+                                    placeholder="e.g., Kraft, Nestle"
+                                    placeholderTextColor={placeholder}
+                                    value={manufacturer}
+                                    onChangeText={setManufacturer}
+                                    style={styles.input}
+                                />
 
-                                {item?.status === 'soon' && (
-                                    <Text style={styles.suggestionText}>
-                                        This item is nearing expiration. You might want to use it soon, try adding it to a meal plan or sharing it.
+                                <Text style={styles.label}>Lot Number</Text>
+                                <TextInput
+                                    placeholder="e.g., 12345"
+                                    placeholderTextColor={placeholder}
+                                    value={lotNumber}
+                                    onChangeText={setLotNumber}
+                                    style={styles.input}
+                                    keyboardType="numeric"
+                                />
+
+                                <Text style={styles.label}>Quantity</Text>
+                                <TextInput
+                                    placeholder="e.g., 1, 2, 3"
+                                    placeholderTextColor={placeholder}
+                                    value={quantity}
+                                    onChangeText={setQuantity}
+                                    style={styles.input}
+                                    keyboardType="numeric"
+                                />
+
+                                <Text style={styles.label}>Country of Origin</Text>
+                                <Pressable onPress={() => setCountryOpen(!countryOpen)} style={styles.inputWithIcon}>
+                                    <Text style={{ flex: 1, color: country ? theme.text : placeholder }}>
+                                        {country || 'Select a country...'}
                                     </Text>
+                                    <Ionicons
+                                        name={countryOpen ? 'chevron-up' : 'chevron-down'}
+                                        size={18}
+                                        color={theme.textDim}
+                                    />
+                                </Pressable>
+                                {countryOpen && (
+                                    <View style={styles.dropdown}>
+                                        {COUNTRIES.map((c) => (
+                                            <Pressable
+                                                key={c}
+                                                style={styles.dropdownRow}
+                                                onPress={() => {
+                                                    setCountry(c);
+                                                    setCountryOpen(false);
+                                                }}
+                                            >
+                                                <Text style={{ color: theme.text }}>{c}</Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
                                 )}
 
-                                {item?.status === 'expired' && (
-                                    <Text style={styles.suggestionText}>
-                                        This item appears to be expired. Dispose of it safely and check if it can be recycled or composted.
-                                    </Text>
+                                <Text style={styles.label}>Allergens</Text>
+                                <TextInput
+                                    placeholder="e.g., Milk, Eggs, Nuts"
+                                    placeholderTextColor={placeholder}
+                                    value={allergens}
+                                    onChangeText={setAllergens}
+                                    style={styles.input}
+                                />
+
+                                <View style={styles.footerRow}>
+                                    <Pressable style={styles.cancelBtn} onPress={resetAndClose}>
+                                        <Text style={styles.cancelText}>Cancel</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.addBtn} onPress={handleSave} disabled={saving}>
+                                        {saving ? (
+                                            <ActivityIndicator color="#fff" />
+                                        ) : (
+                                            <Text style={styles.addText}>{item ? 'Save' : 'Add'}</Text>
+                                        )}
+                                    </Pressable>
+                                </View>
+                            </>
+                        ) : (
+                            /* VIEW MODE */
+                            <>
+                                <View style={styles.infoContainer}>
+                                    <Text style={styles.infoTitle}>{item?.name || 'Unnamed Item'}</Text>
+                                    {!!item?.sub && <Text style={styles.infoSub}>{item.sub}</Text>}
+
+                                    {item?.status && (
+                                        <View
+                                            style={[
+                                                styles.statusBadge,
+                                                item.status === 'expired'
+                                                    ? { backgroundColor: theme.danger || '#EF4444' }
+                                                    : item.status === 'soon'
+                                                        ? { backgroundColor: theme.primary }
+                                                        : { backgroundColor: '#4CAF50' },
+                                            ]}
+                                        >
+                                            <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                <View style={styles.sectionCard}>
+                                    <Text style={styles.sectionHeader}>Time Remaining</Text>
+                                    <View style={styles.countdownContainer}>
+                                        <Ionicons name="time-outline" size={18} color={theme.primary} />
+                                        <Text style={styles.countdownText}>
+                                            {getExpirationCountdown(item?.expiresAt)}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {(item?.status === 'soon' || item?.status === 'expired') && (
+                                    <View style={styles.suggestionContainer}>
+                                        <Text style={styles.sectionHeader}>Smart Suggestions</Text>
+
+                                        {item?.status === 'soon' && (
+                                            <Text style={styles.suggestionText}>
+                                                This item is nearing expiration. You might want to use it soon, try adding it to a meal plan or sharing it.
+                                            </Text>
+                                        )}
+
+                                        {item?.status === 'expired' && (
+                                            <Text style={styles.suggestionText}>
+                                                This item appears to be expired. Dispose of it safely and check if it can be recycled or composted.
+                                            </Text>
+                                        )}
+
+                                        <View style={styles.disclaimerContainer}>
+                                            <Ionicons name="alert-circle-outline" size={16} color={theme.textDim} />
+                                            <Text style={styles.disclaimerText}>
+                                                These suggestions are informational only and may not reflect actual freshness or safety.
+                                                Always verify expiration labels and use your best judgment.
+                                            </Text>
+                                        </View>
+                                    </View>
                                 )}
 
-                                {/* ⚠️ Disclaimer */}
-                                <View style={styles.disclaimerContainer}>
-                                    <Ionicons name="alert-circle-outline" size={16} color={theme.textDim} />
-                                    <Text style={styles.disclaimerText}>
-                                        These suggestions are informational only and may not reflect actual freshness or safety.
-                                        Always verify expiration labels and use your best judgment.
-                                    </Text>
+                                <View style={styles.sectionCard}>
+                                    <Text style={styles.sectionHeader}>Notes</Text>
+                                    <TextInput
+                                        placeholder="Add notes about this item..."
+                                        placeholderTextColor={theme.textDim}
+                                        multiline
+                                        value={notes}
+                                        onChangeText={setNotes}
+                                        style={styles.notesInput}
+                                    />
                                 </View>
-                            </View>
+                            </>
                         )}
-
-
-                        {/* Notes */}
-                        <View style={styles.sectionCard}>
-                            <Text style={styles.sectionHeader}><Text style={{ fontWeight: '800' }}>Notes</Text></Text>
-                            <TextInput
-                                placeholder="Add notes about this item..."
-                                placeholderTextColor={theme.textDim}
-                                multiline
-                                style={styles.notesInput}
-                            />
-                        </View>
                     </ScrollView>
                 </Animated.View>
             </SafeAreaView>
         </Modal>
     );
 }
-
-
-/* ---------------- Styling ---------------- */
 
 const makeStyles = (t: any) =>
     StyleSheet.create({
@@ -300,6 +432,7 @@ const makeStyles = (t: any) =>
         headerRow: {
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
             paddingHorizontal: 16,
             paddingTop: 10,
             paddingBottom: 6,
@@ -312,7 +445,7 @@ const makeStyles = (t: any) =>
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: t.border,
         },
-        title: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: t.text },
+        title: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: t.text, marginHorizontal: 8 },
 
         content: { paddingHorizontal: 16, paddingBottom: 24 },
         label: { color: t.text, fontWeight: '700', marginTop: 12, marginBottom: 6 },
@@ -338,7 +471,6 @@ const makeStyles = (t: any) =>
             marginBottom: 10,
         },
         image: { width: '100%', height: 210, borderRadius: 12, marginTop: 6, marginBottom: 8, backgroundColor: t.surface },
-        selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
         dropdown: {
             borderWidth: 1,
             borderColor: t.border,
@@ -403,35 +535,6 @@ const makeStyles = (t: any) =>
             fontSize: 12,
         },
 
-        detailsGrid: {
-            marginTop: 16,
-            backgroundColor: t.card ?? t.inputBg,
-            borderRadius: 16,
-            paddingVertical: 16,
-            paddingHorizontal: 18,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: t.border,
-        },
-
-        detailRow: {
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            marginBottom: 16,
-        },
-
-        detailLabel: {
-            fontSize: 14,
-            fontWeight: '600',
-            color: t.textDim,
-            marginBottom: 4,
-        },
-
-        detailValue: {
-            fontSize: 16,
-            fontWeight: '700',
-            color: t.text,
-        },
-
         notesInput: {
             height: 80,
             borderRadius: 12,
@@ -470,11 +573,6 @@ const makeStyles = (t: any) =>
             borderColor: t.border,
             marginTop: 20,
             marginBottom: 10,
-        },
-
-        highlight: {
-            fontWeight: '700',
-            color: t.primary,
         },
 
         suggestionContainer: {
@@ -518,7 +616,4 @@ const makeStyles = (t: any) =>
             color: t.textDim,
             lineHeight: 18,
         },
-
-
-
     });

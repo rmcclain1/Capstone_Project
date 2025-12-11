@@ -46,6 +46,28 @@ class Api::V1::UsersController < ApplicationController
       render json: { error: 'Server error' }, status: :internal_server_error
     end
   end
+  # api/v1/users/me
+  def update_me
+    return render json: { error: 'Unauthorized' }, status: :unauthorized unless current_user
+
+    begin
+      permitted = permitted_update_params
+      Rails.logger.info("Users#update_me permitted: #{permitted.inspect}")
+
+      if current_user.update(permitted)
+        render json: current_user, status: :ok
+      else
+        Rails.logger.error("User update failed: #{current_user.errors.full_messages}")
+        render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+      end
+    rescue ActiveModel::UnknownAttributeError => e
+      Rails.logger.error("UnknownAttributeError: #{e.message}")
+      render json: { error: e.message }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error(e.full_message)
+      render json: { error: 'Server error' }, status: :internal_server_error
+    end
+  end
 
   # POST /api/v1/users/verify_password
   def verify_password

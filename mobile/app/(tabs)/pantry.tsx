@@ -273,6 +273,65 @@ export default function PantryScreen() {
             setDeletingId(null);
         }
     }, [fetchPantry, removeLocal]);
+    const updatePantry = useCallback(async (id: string, form: {
+        name: string;
+        imageUri?: string;
+        expiresAt?: string;
+        manufacturer?: string;
+        lotNumber?: string;
+        quantity?: string;
+        country?: string;
+        allergens?: string;
+    }) => {
+        try {
+            const item_name = (form.name || '').trim();
+            if (!item_name) {
+                Alert.alert('Missing name', 'Please enter an item name.');
+                return;
+            }
+
+            const expiration_date = toISODateMaybe(form.expiresAt);
+            const lot_number =
+                form.lotNumber && form.lotNumber.trim() !== '' ? Number(form.lotNumber) : null;
+            if (form.lotNumber && Number.isNaN(lot_number)) {
+                Alert.alert('Invalid lot number', 'Lot number must be numeric.');
+                return;
+            }
+
+            const body: any = {
+                pantry: {
+                    item_name,
+                    expiration_date,
+                    bestby_date: null,
+                    manufacturer: form.manufacturer?.trim() || null,
+                    lot_number,
+                    country_of_origin: form.country?.trim() || null,
+                    allergen: form.allergens?.trim() || null,
+                    expired: isExpiredFromMMDDYYYY(form.expiresAt),
+                    category: null,
+                },
+            };
+
+            if (form.imageUri && /^https?:\/\//i.test(form.imageUri)) {
+                body.pantry.image_url = form.imageUri.trim();
+            }
+
+            console.log('[Pantry] Updating item:', id, body);
+            await api.put(`/api/v1/pantries/${id}`, body);
+            await fetchPantry();
+            Alert.alert('Success', 'Item updated successfully');
+        } catch (e: any) {
+            console.error('[Pantry] Update error:', e?.response?.data || e?.message);
+            Alert.alert(
+                'Update Failed',
+                e?.response?.data?.errors?.join(', ') ??
+                e?.response?.data?.error ??
+                e?.message ?? 'Unknown error'
+            );
+            throw e; // Re-throw so modal knows update failed
+        }
+    }, [fetchPantry]);
+
 
     const confirmDelete = useCallback((id: string, name: string) => {
         Alert.alert(
@@ -397,8 +456,13 @@ export default function PantryScreen() {
             <AddItemModal visible={addOpen} onClose={() => setAddOpen(false)} onSubmit={onSubmitNew} />
             <ItemDetailsModal
                 visible={isDetailsOpen}
-                onClose={() => setIsDetailsOpen(false)}
+                onClose={() => {
+                    setIsDetailsOpen(false);
+                    setSelectedItem(null);
+                }}
                 item={selectedItem}
+                onUpdate={updatePantry}
+                mode="view"
             />
         </SafeAreaView>
     );

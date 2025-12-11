@@ -19,9 +19,7 @@ mobile/yarn-error.log*
 .vscode/
 .DS_Store
 
-# --- Environment files ---
-.env
-.env.*
+
 
 # Expo / React Native
 node_modules

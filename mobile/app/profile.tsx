@@ -147,7 +147,7 @@ export default function Profile() {
             };
 
             console.log('[Profile] Sending update:', body);
-            const { data } = await api.put(`/api/v1/users/${user.id}`, body);
+            const { data } = await api.put(`/api/v1/users/me`, body);
             console.log('[Profile] Update successful');
 
             setUser({ ...data, allergies: toArray(data.allergies) });

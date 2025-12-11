@@ -9,6 +9,8 @@ import {
     Pressable,
     ActivityIndicator,
     Alert,
+    Share,
+    Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -60,8 +62,47 @@ export default function RecallDetails() {
 
     const title = item?.product_description || params.title || 'Recall';
 
-    const handleShare = () => {
-        Alert.alert('Share', 'Share functionality coming soon!');
+    const handleShare = async () => {
+        if (!item) return;
+
+        try {
+            const message = `🚨 Food Recall Alert 🚨\n\n` +
+                `Product: ${item.product_description}\n` +
+                `Firm: ${item.recalling_firm}\n` +
+                `Reason: ${item.reason_for_recall}\n` +
+                `Status: ${item.status}\n` +
+                `Classification: Class ${item.classification}\n\n` +
+                `Stay safe and check your pantry!`;
+
+            const result = await Share.share(
+                {
+                    message,
+                    title: 'Food Recall Alert',
+                    ...(Platform.OS === 'ios' && {
+                        url: `https://yourapp.com/recalls/${item.id}`, // Optional: Add your deep link
+                    }),
+                },
+                {
+                    dialogTitle: 'Share Recall Information',
+                    ...(Platform.OS === 'android' && {
+                        subject: `Food Recall: ${item.product_description}`,
+                    }),
+                }
+            );
+
+            if (result.action === Share.sharedAction) {
+                if (result.activityType) {
+                    console.log('[Share] Shared via:', result.activityType);
+                } else {
+                    console.log('[Share] Shared successfully');
+                }
+            } else if (result.action === Share.dismissedAction) {
+                console.log('[Share] Share dismissed');
+            }
+        } catch (error: any) {
+            console.error('[Share] Error:', error);
+            Alert.alert('Share Failed', 'Unable to share recall information. Please try again.');
+        }
     };
 
     return (
@@ -72,8 +113,12 @@ export default function RecallDetails() {
                     <Ionicons name="chevron-back" size={26} color={theme.text} />
                 </Pressable>
                 <Text style={s.headerTitle}>Recall Details</Text>
-                <Pressable hitSlop={12} onPress={handleShare}>
-                    <Ionicons name="share-outline" size={24} color={theme.text} />
+                <Pressable hitSlop={12} onPress={handleShare} disabled={!item}>
+                    <Ionicons
+                        name="share-outline"
+                        size={24}
+                        color={item ? theme.text : theme.textDim}
+                    />
                 </Pressable>
             </View>
 
@@ -90,7 +135,6 @@ export default function RecallDetails() {
                     <Pressable style={[s.retryButton, { backgroundColor: theme.primary }]} onPress={() => {
                         setLoading(true);
                         setError(null);
-                        // Trigger reload
                     }}>
                         <Text style={s.retryText}>Try Again</Text>
                     </Pressable>

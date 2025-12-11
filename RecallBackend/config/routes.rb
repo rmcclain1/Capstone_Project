@@ -5,6 +5,10 @@ Rails.application.routes.draw do
       post  '/users/verify_password', to: 'users#verify_password'
       patch '/users/update_password', to: 'users#update_password'
 
+      # Current user update endpoint (must come BEFORE resources :users)
+      put   '/users/me', to: 'users#update_me'
+      patch '/users/me', to: 'users#update_me'
+
       # User and Pantry resources
       resources :users,    only: [:index, :show, :create, :update, :destroy]
       resources :pantries, only: [:index, :show, :create, :update, :destroy]

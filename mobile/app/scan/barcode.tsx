@@ -12,7 +12,17 @@ export default function BarcodeScan() {
     const [scanned, setScanned] = useState(false);
     const [barcode, setBarcode] = useState<string | null>(null);
 
+    // Reset scanned state when component unmounts or when user navigates away
+    useEffect(() => {
+        return () => {
+            setScanned(false);
+            setBarcode(null);
+        };
+    }, []);
+
     const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+        if (scanned) return; // Prevent multiple scans
+
         setScanned(true);
         setBarcode(data);
         console.log(`Barcode scanned: Type=${type}, Data=${data}`);
@@ -21,10 +31,34 @@ export default function BarcodeScan() {
             'Barcode Scanned!',
             `Type: ${type}\nData: ${data}`,
             [
-                { text: 'Scan Again', onPress: () => setScanned(false) },
-                { text: 'Add to Pantry', onPress: () => handleAddToPantry(data) },
-                { text: 'Close', onPress: () => router.back() },
-            ]
+                {
+                    text: 'Scan Again',
+                    onPress: () => {
+                        setScanned(false);
+                        setBarcode(null);
+                    }
+                },
+                {
+                    text: 'Add to Pantry',
+                    onPress: () => handleAddToPantry(data)
+                },
+                {
+                    text: 'Close',
+                    onPress: () => {
+                        setScanned(false);
+                        setBarcode(null);
+                        router.back();
+                    }
+                },
+            ],
+            {
+                cancelable: false,
+                onDismiss: () => {
+                    // Reset scanned state if alert is dismissed
+                    setScanned(false);
+                    setBarcode(null);
+                }
+            }
         );
     };
 
@@ -38,9 +72,22 @@ export default function BarcodeScan() {
                 'Invalid Barcode',
                 'This barcode format is not supported. Please try again or enter manually.',
                 [
-                    { text: 'Try Again', onPress: () => setScanned(false) },
+                    {
+                        text: 'Try Again',
+                        onPress: () => {
+                            setScanned(false);
+                            setBarcode(null);
+                        }
+                    },
                     { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
-                    { text: 'Cancel', onPress: () => router.back() },
+                    {
+                        text: 'Cancel',
+                        onPress: () => {
+                            setScanned(false);
+                            setBarcode(null);
+                            router.back();
+                        }
+                    },
                 ]
             );
             return;
@@ -82,7 +129,14 @@ export default function BarcodeScan() {
                 Alert.alert(
                     'Success!',
                     `Added "${productName}" to your pantry`,
-                    [{ text: 'OK', onPress: () => router.replace('/(tabs)/pantry') }]
+                    [{
+                        text: 'OK',
+                        onPress: () => {
+                            setScanned(false);
+                            setBarcode(null);
+                            router.replace('/(tabs)/pantry');
+                        }
+                    }]
                 );
             } else {
                 // Product not found in OpenFoodFacts database
@@ -99,13 +153,26 @@ export default function BarcodeScan() {
                                         barcode: barcodeData,
                                     }
                                 });
-                                Alert.alert('Success!', `Added "${name}" to your pantry`);
-                                router.replace('/(tabs)/pantry');
+                                Alert.alert(
+                                    'Success!',
+                                    `Added "${name}" to your pantry`,
+                                    [{
+                                        text: 'OK',
+                                        onPress: () => {
+                                            setScanned(false);
+                                            setBarcode(null);
+                                            router.replace('/(tabs)/pantry');
+                                        }
+                                    }]
+                                );
                             } catch (error: any) {
                                 Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item');
+                                setScanned(false);
+                                setBarcode(null);
                             }
                         } else {
-                            setScanned(false); // Allow scanning again
+                            setScanned(false);
+                            setBarcode(null);
                         }
                     },
                     'plain-text'
@@ -119,9 +186,23 @@ export default function BarcodeScan() {
                     'Request Timeout',
                     'Product lookup took too long. Would you like to try again or enter manually?',
                     [
-                        { text: 'Retry', onPress: () => { setScanned(false); handleAddToPantry(barcodeData); } },
+                        {
+                            text: 'Retry',
+                            onPress: () => {
+                                setScanned(false);
+                                setBarcode(null);
+                                handleAddToPantry(barcodeData);
+                            }
+                        },
                         { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
-                        { text: 'Cancel', style: 'cancel' },
+                        {
+                            text: 'Cancel',
+                            style: 'cancel',
+                            onPress: () => {
+                                setScanned(false);
+                                setBarcode(null);
+                            }
+                        },
                     ]
                 );
             } else {
@@ -129,13 +210,24 @@ export default function BarcodeScan() {
                     'Error',
                     error?.response?.data?.errors?.join(', ') || 'Failed to add item to pantry',
                     [
-                        { text: 'Try Again', onPress: () => setScanned(false) },
-                        { text: 'Cancel', onPress: () => router.back() },
+                        {
+                            text: 'Try Again',
+                            onPress: () => {
+                                setScanned(false);
+                                setBarcode(null);
+                            }
+                        },
+                        {
+                            text: 'Cancel',
+                            onPress: () => {
+                                setScanned(false);
+                                setBarcode(null);
+                                router.back();
+                            }
+                        },
                     ]
                 );
             }
-
-            setScanned(false);
         }
     };
 
@@ -188,7 +280,11 @@ export default function BarcodeScan() {
                 <View style={styles.topOverlay}>
                     <Pressable
                         style={styles.closeButton}
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            setScanned(false);
+                            setBarcode(null);
+                            router.back();
+                        }}
                     >
                         <Ionicons name="close" size={32} color="white" />
                     </Pressable>
@@ -200,15 +296,12 @@ export default function BarcodeScan() {
 
                 <View style={styles.bottomOverlay}>
                     <Text style={styles.instructionText}>
-                        {scanned ? 'Barcode scanned!' : 'Point camera at barcode'}
+                        {scanned ? 'Processing...' : 'Point camera at barcode'}
                     </Text>
-                    {scanned && (
-                        <Pressable
-                            style={styles.rescanButton}
-                            onPress={() => setScanned(false)}
-                        >
-                            <Text style={styles.rescanText}>Tap to scan again</Text>
-                        </Pressable>
+                    {!scanned && (
+                        <Text style={styles.hintText}>
+                            Align barcode within the frame
+                        </Text>
                     )}
                 </View>
             </View>
@@ -302,13 +395,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         textAlign: 'center',
-        marginBottom: 16,
+        marginBottom: 8,
+    },
+    hintText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 14,
+        textAlign: 'center',
     },
     rescanButton: {
         paddingHorizontal: 24,
         paddingVertical: 12,
         backgroundColor: '#2362FF',
         borderRadius: 12,
+        marginTop: 12,
     },
     rescanText: {
         color: 'white',
