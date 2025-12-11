@@ -21,13 +21,11 @@ module Api
         )
         rec.image.attach(params[:image])
 
-      
-        
         # For now, process synchronously with error handling
         begin
-          path = ActiveStorage::Blob.service.send(:path_for, rec.image.blob.key)
-          items = ReceiptParser.extract_items(path)
-          
+          path  = ActiveStorage::Blob.service.send(:path_for, rec.image.blob.key)
+          items = ReceiptParser.extract_items(path, content_type)
+
           if items.empty?
             rec.update!(status: 'done', items: [])
           else

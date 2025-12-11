@@ -5,27 +5,40 @@ require "json"
 require "base64"
 
 class ReceiptParser
-  def self.extract_items(image_path)
+  # accept optional content_type and pass it to DocAI
+  def self.extract_items(image_path, content_type = nil)
     engine = ENV.fetch("RECEIPT_ENGINE", "docai_rest")
     case engine
-    when "docai_rest" then DocAI_REST.extract_items(image_path)
-    else                   Stub.extract_items(image_path)
+    when "docai_rest"
+      DocAI_REST.extract_items(image_path, content_type: content_type)
+    else
+      Stub.extract_items(image_path)
     end
   end
 
   module DocAI_REST
     module_function
 
-    def extract_items(image_path)
+    # accept content_type: and use it instead of only guessing from the path
+    def extract_items(image_path, content_type: nil)
       endpoint = "https://#{ENV.fetch("DOCAI_LOCATION", "us")}-documentai.googleapis.com/v1/" \
                  "projects/#{ENV.fetch("DOCAI_PROJECT")}/locations/#{ENV.fetch("DOCAI_LOCATION", "us")}" \
                  "/processors/#{ENV.fetch("DOCAI_PROCESSOR_ID")}:process"
 
       token = fetch_access_token
+
+      # Prefer the blob content_type if provided, fall back to guessing from file extension
+      effective_mime_type =
+        if content_type && !content_type.strip.empty?
+          content_type
+        else
+          mime_type(image_path)
+        end
+
       body = {
         rawDocument: {
           content:  Base64.strict_encode64(File.binread(image_path)),
-          mimeType: mime_type(image_path)
+          mimeType: effective_mime_type
         }
       }
 
@@ -36,21 +49,27 @@ class ReceiptParser
       doc = payload.dig("document")
 
       lines = extract_lines(doc)
-      candidates = lines
-        .map { |s| normalize(s) }
-        .reject { |s| s.empty? || header_or_footer?(s) }
-        .uniq
-        .take(50)  # Increased limit, filter on frontend if needed
 
-      candidates.map do |line|
+      raw_candidates = lines
+        .map { |s| normalize(s) }
+        .reject { |s| s.empty? || header_or_footer?(s) || garbage_line?(s) }
+        .uniq
+        .take(50)
+
+      items = raw_candidates.map do |line|
         qty = extract_quantity(line)
-        { 
-          raw: line, 
-          qty: qty, 
+        {
+          raw: line,
+          qty: qty,
           name: strip_qty(line),
           confidence: calculate_confidence(line)
         }
-      end.sort_by { |item| -item[:confidence] }  # Sort by confidence
+      end
+
+      # Keep only reasonably confident lines
+      items
+        .select { |item| item[:confidence] >= 60 }
+        .sort_by { |item| -item[:confidence] }
     rescue => e
       Rails.logger.error "DocAI REST failed: #{e.class}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
@@ -65,32 +84,32 @@ class ReceiptParser
         /\bx\s*(\d+)\b/i,
         /\b(\d+)\s*@\b/i,  # e.g., "2 @ $5.99"
       ]
-      
+
       patterns.each do |pattern|
         match = line.match(pattern)
         return match[1].to_i if match && match[1].to_i > 0
       end
-      
+
       1  # Default to 1
     end
 
     def calculate_confidence(line)
       score = 50  # Base score
-      
+
       # Boost for reasonable length
       score += 20 if line.length.between?(5, 40)
-      
+
       # Boost for containing price indicators
       score += 15 if line =~ /\$\d+\.\d{2}/
-      
+
       # Penalize very short or very long
       score -= 20 if line.length < 3
       score -= 15 if line.length > 50
-      
+
       # Penalize if mostly numbers
       number_ratio = line.scan(/\d/).length.to_f / line.length
       score -= 20 if number_ratio > 0.6
-      
+
       score.clamp(0, 100)
     end
 
@@ -118,8 +137,18 @@ class ReceiptParser
 
     def fetch_access_token
       require "googleauth"
+
       scope = ["https://www.googleapis.com/auth/cloud-platform"]
-      creds = Google::Auth::ServiceAccountCredentials.make_creds(scope: scope)
+
+      key_path = ENV["GOOGLE_APPLICATION_CREDENTIALS"]
+      raise "GOOGLE_APPLICATION_CREDENTIALS not set" if key_path.nil? || key_path.strip.empty?
+      raise "GOOGLE_APPLICATION_CREDENTIALS file not found at #{key_path}" unless File.exist?(key_path)
+
+      creds = Google::Auth::ServiceAccountCredentials.make_creds(
+        json_key_io: File.open(key_path),
+        scope: scope
+      )
+
       creds.fetch_access_token!["access_token"]
     end
 
@@ -153,23 +182,59 @@ class ReceiptParser
     end
 
     def header_or_footer?(s)
-      return true if s.length < 3 || s.length > 70
-      
-      # Common receipt header/footer patterns
-      exclude_patterns = [
-        /\b(subtotal|total|tax|change|balance)\b/i,
-        /\b(thank you|visit again|welcome)\b/i,
-        /\b(receipt|store|location)\b/i,
-        /\b(visa|mastercard|amex|discover|card|payment)\b/i,
-        /\b(date|time|cashier|register)\b/i,
-        /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,  # Date formats
-        /^\d{1,2}:\d{2}(:\d{2})?\s*(am|pm)?$/i,  # Time formats
-        /^store\s*#?\d+$/i,
-        /^www\./i,
-        /^\*+$/,  # Decorative stars
-      ]
-      
-      exclude_patterns.any? { |pattern| s =~ pattern }
+  s = s.strip
+  return true if s.length < 3 || s.length > 70
+
+  # 1) Drop obvious price-only lines (with or without F / NT / CT)
+  return true if s =~ /^\$?\d+(\.\d{2})?\s*(f|nt|ct)?\s*$/i
+  # e.g. "3.49", "3.49 F", "31.99 NT", "1.99 CT"
+
+  # 2) Drop weight/price-only combos like "0.26 lb @ 1 lb /"
+  return true if s =~ /^\d+(\.\d+)?\s*(lb|kg)\s*@/i
+
+  # 3) Drop lines that are mostly numbers / symbols (UPCs, codes, etc.)
+  digits = s.scan(/\d/).length
+  non_space_len = s.gsub(/\s+/, "").length
+  if non_space_len > 0 && (digits.to_f / non_space_len) > 0.6
+    return true
+  end
+
+  # Common receipt header/footer patterns
+  exclude_patterns = [
+    /\b(subtotal|total|tax|change|balance)\b/i,
+    /\b(thank you|visit again|welcome)\b/i,
+    /\b(receipt|store|location)\b/i,
+    /\b(visa|mastercard|amex|discover|card|payment)\b/i,
+    /\b(date|time|cashier|register)\b/i,
+    /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,                  # Date formats
+    /^\d{1,2}:\d{2}(:\d{2})?\s*(am|pm)?$/i,         # Time formats
+    /^store\s*#?\d+$/i,
+    /^www\./i,
+    /^\*+$/,                                        # Decorative stars
+
+    # Loyalty / membership / masked card junk
+    /mperks/i,
+    /^#{Regexp.escape('*')}+\d+$/,                 # e.g. "********91"
+    /^[\*\d\- ]{6,}$/                              # mostly * and digits
+  ]
+
+  exclude_patterns.any? { |pattern| s =~ pattern }
+end
+
+
+    def garbage_line?(s)
+      stripped = s.strip
+      return true if stripped.length < 3
+
+      # Barcode / SKU: no letters and lots of digits
+      if stripped !~ /[A-Za-z]/ && stripped.scan(/\d/).length >= 5
+        return true
+      end
+
+      filler = %w[now was save here only off]
+      return true if filler.include?(stripped.downcase)
+
+      false
     end
 
     def strip_qty(s)
@@ -185,7 +250,7 @@ class ReceiptParser
     module_function
     def extract_items(_image_path)
       [
-        { raw: "CHEERIOS 12OZ", qty: 1, name: "Cheerios 12 oz", confidence: 85 },
+        { raw: "CHEERIOS 12OZ", qty: 1, name: "Cheerios 12 oz",    confidence: 85 },
         { raw: "MILK 1 GAL",    qty: 1, name: "Whole Milk 1 gal", confidence: 90 }
       ]
     end
