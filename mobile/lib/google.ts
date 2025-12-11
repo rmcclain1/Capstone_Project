@@ -7,7 +7,7 @@ import { CFG } from '@/lib/config';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export async function signInWithGoogleAndGetFirebaseIdToken(): Promise<string> {
+export async function signInWithGoogleAndGetFirebaseIdToken(): Promise<{ idToken: string; photoURL?: string | null; displayName?: string | null; email?: string | null }> {
     if (Platform.OS === 'web') {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({
@@ -16,7 +16,12 @@ export async function signInWithGoogleAndGetFirebaseIdToken(): Promise<string> {
         const cred = await signInWithPopup(auth, provider);
         const idToken = await cred.user.getIdToken(true); // Force refresh
         if (!idToken) throw new Error('No Firebase ID token (web)');
-        return idToken;
+        return {
+            idToken,
+            photoURL: cred.user.photoURL,
+            displayName: cred.user.displayName,
+            email: cred.user.email,
+        };
     }
 
     const discovery = {
@@ -63,7 +68,13 @@ export async function signInWithGoogleAndGetFirebaseIdToken(): Promise<string> {
             const firebaseIdToken = await cred.user.getIdToken(true); // Force refresh
             if (!firebaseIdToken) throw new Error('No Firebase ID token (native)');
             console.log('[Google] Successfully obtained Firebase ID token');
-            return firebaseIdToken;
+            console.log('[Google] User photo URL:', cred.user.photoURL);
+            return {
+                idToken: firebaseIdToken,
+                photoURL: cred.user.photoURL,
+                displayName: cred.user.displayName,
+                email: cred.user.email,
+            };
         } catch (e: any) {
             lastError = e;
             console.error(`[Google] Attempt ${attempt + 1} failed:`, e.message);

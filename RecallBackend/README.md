@@ -1,85 +1,45 @@
-
 # Running RecallApp (ConsumeSafe) with Cloudflare Tunnel + Expo
 
-This guide shows you how to:
-
-1. Install and run **Cloudflare Tunnel** (cloudflared)
-2. Start the **Rails backend** (`RecallBackend`)
-3. Start the **Expo frontend** (`mobile`) in:
-
-   * **Web mode** – can test **Google Sign-In**
-   * **Tunnel mode** – use **Expo Go on your phone** to test everything else
-4. Recognize the **logs** you should see when everything is wired correctly
-
-> ⚠️ Google & Apple login:
+> ⚠️ **Google & Apple login**
 >
-> * **Google Sign-In** – works on **web** (Expo web)
-> * **Mobile (Expo Go / `--tunnel`)** – use **email/password login** for now (Google & Apple sign-in are not guaranteed there).
+> * **Google Sign-In** – supported on **web** (Expo web).
+> * **Mobile / Expo Go / emulators** – use **email/password login** for now. Google & Apple sign-in are not guaranteed there.
 
 ---
 
-## 1. Prerequisites
+## Section 1 – Basic Setup (Backend + Frontend)
+
+### 1.1 Prerequisites
 
 You should have:
 
 * **git**
-* **Node.js** (LTS 18+ is recommended)
+* **Node.js** (LTS 18+ recommended)
 * **npm** or **yarn**
 * **Ruby** (matching the project version, e.g. `3.4.x`)
-* **Bundler** (Ruby gem)
+* **Bundler** gem
 * **PostgreSQL**
-* A free **Cloudflare account**
-* **cloudflared** CLI installed
+* (Optional) Ruby version manager: `rbenv`, `asdf`, or `rvm`
 
-### Install cloudflared
-
-#### macOS (Homebrew)
-
-```bash
-brew install cloudflare/cloudflare/cloudflared
-```
-
-#### Debian/Ubuntu
-
-```bash
-curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
-sudo dpkg -i cloudflared.deb
-rm cloudflared.deb
-```
-
-#### Windows (choco)
-
-In an **elevated PowerShell**:
-
-```powershell
-choco install cloudflared
-```
-
-Verify:
-
-```bash
-cloudflared --version
-```
+> Cloudflare-specific setup is in **Section 2**.
 
 ---
 
-## 2. Clone the project
+### 1.2 Clone the project
 
 ```bash
 git clone <your-repo-url> Capstone_Project
 cd Capstone_Project
 ```
 
-Repo structure (relevant folders):
+Relevant folders:
 
-* `RecallBackend/` – Rails API
-* `mobile/` – Expo React Native front-end
+* `RecallBackend/` – Rails API backend
+* `mobile/` – Expo React Native frontend
 
 ---
 
-## 3. Backend: install gems & run Rails
-
-### 3.1 Install Bundler and gems
+### 1.3 Backend: install gems & run Rails
 
 From the project root:
 
@@ -93,11 +53,9 @@ gem install bundler
 bundle install
 ```
 
-If you hit gem version errors, make sure you are using the Ruby version specified for the project (e.g. via `rbenv` or `asdf`).
+If you get gem / Ruby version errors, make sure you’re using the project’s Ruby version (via `rbenv`, `asdf`, etc.).
 
-### 3.2 Setup the database
-
-Still in `RecallBackend`:
+#### Database setup
 
 ```bash
 bin/rails db:setup
@@ -105,9 +63,13 @@ bin/rails db:setup
 rails db:setup
 ```
 
-This creates the database, runs migrations, and seeds data (including sample FDA recall data via `FoodEventImporter`).
+This will:
 
-### 3.3 Start Rails
+* Create the database
+* Run migrations
+* Seed the database (including imported FDA recall data)
+
+#### Start Rails locally
 
 ```bash
 bin/rails server -b 0.0.0.0 -p 3000
@@ -115,7 +77,7 @@ bin/rails server -b 0.0.0.0 -p 3000
 rails server -b 0.0.0.0 -p 3000
 ```
 
-✅ **You’re looking for logs like:**
+✅ Expected logs:
 
 ```text
 => Booting Puma
@@ -125,45 +87,109 @@ rails server -b 0.0.0.0 -p 3000
 [FoodEventImporter] Completed successfully.
 ```
 
-If you hit `Started GET "/..."` lines when you make requests later, that’s good – it means Rails is receiving traffic.
+Later, when the app hits the API, you should see:
+
+```text
+Started GET "/api/v1/food_events" for 127.0.0.1 at ...
+Processing by Api::V1::FoodEventsController#index as JSON
+Completed 200 OK in ...
+```
 
 ---
 
-## 4. Cloudflare Tunnel: expose Rails as `https://api.consumesafe.app`
+### 1.4 Frontend: install dependencies
 
-> If you are running this on your own Cloudflare account/domain, replace `consumesafe.app` and `api.consumesafe.app` with your own domain.
+In a new terminal, from the repo root:
 
-### 4.1 Log in to Cloudflare
+```bash
+cd mobile
+npm install
+# or
+yarn install
+```
+
+You’ll use different Expo commands depending on whether you are running **web** or **mobile via tunnel** (see Section 2.6).
+
+---
+
+## Section 2 – Cloudflare + Expo (Tunnel, Logs, Commands, Environments)
+
+This section shows how to:
+
+* Expose your local Rails backend through **Cloudflare Tunnel**
+* Use that API from **Expo web** and **Expo Go / emulators**
+* Know **which command** to run and **what logs** to look for
+* Understand **which features** work in which environment
+
+---
+
+### 2.1 Install & log in to `cloudflared`
+
+#### Install `cloudflared`
+
+**macOS (Homebrew)**
+
+```bash
+brew install cloudflare/cloudflare/cloudflared
+```
+
+**Debian/Ubuntu**
+
+```bash
+curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+rm cloudflared.deb
+```
+
+**Windows (Chocolatey, elevated PowerShell)**
+
+```powershell
+choco install cloudflared
+```
+
+Verify:
+
+```bash
+cloudflared --version
+```
+
+Log in to your Cloudflare account:
 
 ```bash
 cloudflared tunnel login
 ```
 
-This opens a browser to authenticate your Cloudflare account.
+A browser window will open to authenticate you.
 
-### 4.2 Create a named tunnel
+> If you’re using your own domain, replace `consumesafe.app` / `api.consumesafe.app` with your own throughout this section.
+
+---
+
+### 2.2 Create tunnel + DNS route
+
+Create a named tunnel:
 
 ```bash
 cloudflared tunnel create recall-app
 ```
 
-Cloudflare will print a **tunnel ID** and a path to a **credentials file**, e.g.:
+You should see something like:
 
 ```text
 Tunnel credentials written to /home/you/.cloudflared/<TUNNEL_ID>.json
 ```
 
-### 4.3 Create a DNS record for the tunnel
-
-In your terminal:
+Then create a DNS route:
 
 ```bash
 cloudflared tunnel route dns recall-app api.consumesafe.app
 ```
 
-Cloudflare will create a proxied `CNAME` record that points `api.consumesafe.app` at your tunnel.
+Cloudflare will create a proxied `CNAME` pointing `api.consumesafe.app` at your tunnel.
 
-### 4.4 Configure tunnel ingress
+---
+
+### 2.3 Configure tunnel ingress
 
 Create or edit `~/.cloudflared/config.yml`:
 
@@ -177,18 +203,52 @@ ingress:
   - service: http_status:404
 ```
 
-> 🔁 If you’re on Windows, the credentials file will be under something like:
-> `C:\Users\<you>\.cloudflared\<TUNNEL_ID>.json`
+On Windows, the credentials file path will look like:
 
-### 4.5 Run the tunnel
+```text
+C:\Users\<you>\.cloudflared\<TUNNEL_ID>.json
+```
 
-With Rails still running on port 3000, start the tunnel:
+---
+
+### 2.4 Allow Cloudflare host in Rails
+
+In `RecallBackend/config/environments/development.rb`:
+
+```rb
+config.hosts << "api.consumesafe.app"
+```
+
+Restart Rails after changing this.
+
+If you forget this, you’ll see messages like:
+
+```text
+Blocked hosts: api.consumesafe.app
+```
+
+in the Rails logs.
+
+---
+
+### 2.5 Run Rails + Cloudflare together
+
+Make sure Rails is running:
+
+```bash
+cd RecallBackend
+bin/rails server -b 0.0.0.0 -p 3000
+# or
+rails server -b 0.0.0.0 -p 3000
+```
+
+In another terminal, start the tunnel:
 
 ```bash
 cloudflared tunnel run recall-app
 ```
 
-✅ **You’re looking for logs like:**
+✅ Expected Cloudflare logs:
 
 ```text
 INF Starting tunnel tunnelID=90302b30-5a38-4254-8fcb-03398c9a6a6d
@@ -198,23 +258,19 @@ INF Registered tunnel connection connIndex=1 ...
 ...
 ```
 
-Some warnings about ICMP or UDP buffer size are normal and can be ignored.
+Warnings about ICMP/UDP buffers are normal.
 
-### 4.6 Quick sanity check with curl
-
-From any terminal (with the tunnel running and Rails running):
+#### Quick sanity check
 
 ```bash
 curl -v https://api.consumesafe.app/api/v1/food_events
 ```
 
-✅ You should see:
+✅ Good signs:
 
 * `SSL certificate verify ok.`
 * `HTTP/2 200`
-* A JSON array of recall events.
-
-Example snippet:
+* JSON array of recall events, for example:
 
 ```text
 < HTTP/2 200
@@ -226,119 +282,126 @@ Example snippet:
 ]
 ```
 
-If you see `Blocked hosts: api.consumesafe.app`, it means Rails doesn’t allow that host – you must add:
-
-```rb
-# config/environments/development.rb
-config.hosts << "api.consumesafe.app"
-```
-
-and restart Rails.
+If you get `Blocked hosts: api.consumesafe.app`, go back to **2.4**.
 
 ---
 
-## 5. Frontend: Expo (mobile/)
+### 2.6 Expo commands: web vs tunnel
 
-The mobile app uses an Axios client that points to the API base URL:
+All commands run from the `mobile/` folder.
 
-* By default:
+Use `-c` to clear cache, especially after switching networks or modes.
 
-```ts
-// mobile/lib/api.ts
-const API_URL =
-    process.env.EXPO_PUBLIC_API_BASE_URL ??
-    'https://api.consumesafe.app';
-```
-
-So if you do **nothing**, it will talk to `https://api.consumesafe.app`.
-
-If you want it to hit a **different** backend (like your own local Rails without Cloudflare), set:
-
-```bash
-export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
-```
-
-before running Expo.
-
-### 5.1 Install dependencies
-
-From the repo root:
+#### Web (best for Google Sign-In)
 
 ```bash
 cd mobile
-npm install
-# or
-yarn install
+npx expo start -c
+# then press "w" for web
 ```
+
+or explicitly:
+
+```bash
+npx expo start -c --web
+```
+
+This opens your app in a browser at something like `http://localhost:8081`.
+
+**Use this when:**
+
+* You want to test **Google Sign-In**
+* You don’t need camera / scanning
+
+#### Mobile – Expo Go / Android Emulator (via tunnel)
+
+```bash
+cd mobile
+npx expo start -c --tunnel
+```
+
+**Use this when:**
+
+* You want to test:
+
+  * Email/password login
+  * Pantry and recalls
+  * Notifications
+  * Barcode / receipt scanning (camera)
+* You want to test on a physical phone or emulator using Expo Go
+
+Then:
+
+1. Install **Expo Go** on your phone (Android/iOS) or start an **Android emulator**.
+2. Scan the QR code from the terminal (or select the device in Expo dev tools).
+3. The app opens on the device.
 
 ---
 
-## 6. Running Expo – web vs mobile
+### 2.7 Environment / feature matrix
 
-### 6.1 Web mode (for Google Sign-In)
+| Environment                   | Command                      | Good for                                                                | Limitations                                             |
+| ----------------------------- | ---------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Expo Web (browser)**        | `npx expo start -c` → `w`    | UI testing, **Google Sign-In**, browsing recalls & pantry               | No camera; receipt/barcode scanning limited             |
+| **Expo Go (physical device)** | `npx expo start -c --tunnel` | Email/password login, recalls, pantry, notifications, scanning features | Google/Apple login not guaranteed                       |
+| **Android Emulator**          | `npx expo start -c --tunnel` | Similar to Expo Go; good for layout + camera tests                      | Needs emulator camera setup; Google/Apple still limited |
 
-From `mobile/`:
+---
 
-```bash
-npx expo start --web
+### 2.8 Logs to look for
+
+**Rails (backend)** – good signs:
+
+```text
+Listening on http://0.0.0.0:3000
+[FoodEventImporter] Completed successfully.
+
+Started GET "/api/v1/me" for 76.xx.xx.xx at ...
+Processing by Api::V1::SessionsController#me as JSON
+Completed 200 OK in ...
+
+Started GET "/api/v1/notifications?page=1&per_page=20" for ...
+Processing by Api::V1::NotificationsController#index as JSON
+Completed 200 OK in ...
 ```
 
-Or:
+Problem signs:
 
-```bash
-npx expo start
-# then press "w" in the terminal
-```
+* `Completed 401 Unauthorized` → token missing/expired or Authorization header not sent.
+* `Blocked hosts: api.consumesafe.app` → missing `config.hosts << "api.consumesafe.app"`.
 
-This opens the app in your browser at something like `http://localhost:8081`.
+---
 
-✅ **You’re looking for logs like:**
+**Cloudflare (`cloudflared`)** – good signs:
 
-In the Expo dev terminal:
+* `INF Registered tunnel connection connIndex=...`
+* No constant reconnects or TLS/5xx errors for your hostname
+
+---
+
+**Expo – web**
+
+Terminal:
 
 ```text
 › Web is waiting on http://localhost:8081
 › [web] Logs will appear in the browser console
 ```
 
-In the browser dev console (press F12):
+Browser dev console (F12):
 
 ```text
 [API] Platform: web
 [API] Base URL: https://api.consumesafe.app
 [Auth] Bootstrap - stored token: missing
-```
-
-When you try Google Sign-In, you should see logs like:
-
-```text
 [Login] Attempting Google login...
-[Auth] Starting Google login...
 ```
 
-And in Rails logs:
+---
 
-```text
-Started POST "/api/v1/sessions" for ... at ...
-Processing by Api::V1::SessionsController#create as JSON
-...
-Completed 200 OK in ...
-```
+**Expo – mobile / tunnel**
 
-### 6.2 Mobile (Expo Go) with tunnel (`--tunnel`)
-
-Use this for testing **email/password login, pantry, recalls, notifications, receipt scanning, etc.**
-(But NOT Google/Apple login.)
-
-From `mobile/`:
-
-```bash
-npx expo start --tunnel
-```
-
-✅ **You’re looking for logs like:**
-
-In the Expo dev terminal:
+Terminal:
 
 ```text
 › Metro waiting on exp://...
@@ -346,13 +409,7 @@ In the Expo dev terminal:
 › Scan the QR code above with Expo Go (Android) or the Camera app (iOS)
 ```
 
-Then:
-
-1. Install **Expo Go** on your phone.
-2. Scan the QR code shown in the terminal.
-3. The app will open on your device.
-
-In the device’s console logs (visible in terminal or `expo` devtools), you should see:
+Device logs (terminal or Expo dev tools):
 
 ```text
 [API] Platform: ios
@@ -361,57 +418,199 @@ In the device’s console logs (visible in terminal or `expo` devtools), you sho
 [Auth] Login complete, user set
 ```
 
-And in Rails logs, when you navigate around:
+---
 
-```text
-Started GET "/api/v1/me" for 76.xx.xx.xx at ...
-Processing by Api::V1::SessionsController#me as JSON
-  User Load ... WHERE "users"."id" = 1 ...
-Completed 200 OK in ...
+### 2.9 Common issues
 
-Started GET "/api/v1/notifications?page=1&per_page=20" for 76.xx.xx.xx at ...
-Processing by Api::V1::NotificationsController#index as JSON
-...
-Completed 200 OK in ...
-```
+* **401 Unauthorized in Rails logs**
 
-If you see `Completed 401 Unauthorized`, it usually means:
+  * JWT token missing or expired.
+  * Check that login flow completes and token is stored/sent.
 
-* The JWT token is missing or expired (check login flow), or
-* The Authorization header isn’t being sent – look at `[API] Request with token:` vs `Request WITHOUT token`.
+* **`Blocked hosts: api.consumesafe.app`**
+
+  * Add `config.hosts << "api.consumesafe.app"` in `development.rb` and restart Rails.
+
+* **curl to `https://api.consumesafe.app` fails**
+
+  * Verify Rails is running on port 3000.
+  * Check `ingress` in `config.yml` (`hostname` + `service`).
+  * Ensure `cloudflared tunnel run recall-app` is running.
+
+* **Expo stuck / weird after network change**
+
+  * Use `-c` to clear cache: `npx expo start -c` or `npx expo start -c --tunnel`.
 
 ---
 
-## 7. Quick checklist: “Am I doing it right?”
+## Section 3 – Keys & Environment Variables
 
-You are **good to go** if:
+Some features require keys or env variables.
+
+### 3.1 Rails backend
+
+Depending on setup, you might need:
+
+* **Database credentials** – via `config/database.yml` and local PostgreSQL
+* **Rails credentials / master key** – either:
+
+  * `config/master.key`, or
+  * `RAILS_MASTER_KEY` env var
+
+If these aren’t set correctly, Rails will usually fail to boot and tell you why.
+
+---
+
+### 3.2 Expo / frontend env vars
+
+The API client determines the base URL like:
+
+```ts
+// mobile/lib/api.ts
+const API_URL =
+    process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.consumesafe.app';
+```
+
+You can override this for local-only testing:
+
+```bash
+# Example: point directly at local Rails (no Cloudflare)
+export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+If you **don’t** set it, it defaults to:
+
+```text
+https://api.consumesafe.app
+```
+
+For **Google / Apple / Firebase** auth, look for:
+
+* A Firebase config file (e.g. `mobile/config/firebase.ts`)
+* Auth-related env variables, such as:
+
+  * `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+  * `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+  * `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+  * Firebase project keys
+
+Check for `.env`, `.env.local`, `.env.development`, or `.env.example` in the repo and keep variable names consistent.
+
+> Even without these, **email/password auth should work**, but Google/Apple login may fail.
+
+---
+
+### 3.3 Cloudflare
+
+Cloudflare does **not** use env vars for this app. It uses:
+
+* The credentials JSON:
+
+  * `~/.cloudflared/<TUNNEL_ID>.json` (Linux/macOS)
+  * `C:\Users\<you>\.cloudflared\<TUNNEL_ID>.json` (Windows)
+
+* The config file:
+
+  * `~/.cloudflared/config.yml`
+
+No additional env vars are needed beyond your own Cloudflare setup.
+
+---
+
+## Section 4 – Summary of Features
+
+These are the main features you can test with this setup.
+
+### 4.1 Authentication
+
+* Email/password sign up and login
+* Persistent sessions (JWT) – user should remain logged in after successful auth
+* **Google Sign-In** (web only, when configured)
+* Apple login integration in progress (environment-dependent)
+
+---
+
+### 4.2 Recalls
+
+* View a list of FDA food recalls (via importer in Rails)
+* View recall details: description, product, brand, etc.
+* Data served from endpoints like:
+
+  * `GET /api/v1/food_events`
+
+---
+
+### 4.3 Pantry
+
+* Add pantry items (e.g., “milk,” expiration/best-by dates, etc.)
+* View the pantry list for the logged-in user
+* Backed by:
+
+  * `GET /api/v1/pantries`
+  * `POST /api/v1/pantries`
+  * and related endpoints
+
+---
+
+### 4.4 Notifications
+
+* View user notifications related to recalls or account activity
+* Fetched from:
+
+  * `GET /api/v1/notifications?page=1&per_page=20`
+
+---
+
+### 4.5 Scanning (mobile-focused)
+
+Best tested using **Expo Go** or an **Android emulator** with `--tunnel`:
+
+* **Barcode scanning** – scan product barcodes
+* **Receipt scanning** – upload or capture receipt images to extract items
+
+These require camera access and won’t fully work on plain Expo web.
+
+---
+
+### 4.6 Organizations / account management (if enabled in this build)
+
+* Some flows may allow users to join or manage **organizations/households**
+* Depending on the current branch, this may include:
+
+  * Organization creation / selection screens
+  * Organization-level views of recalls or pantry data
+
+---
+
+### 4.7 Quick “everything is working” checklist
+
+You’re in good shape if:
 
 1. **Rails** shows:
 
    * `Listening on http://0.0.0.0:3000`
    * `[FoodEventImporter] Completed successfully.`
 
-2. **Cloudflare tunnel** shows:
+2. **Cloudflare** shows:
 
    * `INF Starting tunnel tunnelID=...`
-   * Several `Registered tunnel connection` lines
-   * No 525/403 errors when you curl the domain.
+   * Multiple `Registered tunnel connection` lines
 
 3. `curl https://api.consumesafe.app/api/v1/food_events`:
 
-   * Returns `HTTP/2 200` with JSON.
+   * Returns `HTTP/2 200` with JSON
 
-4. **Expo web**:
+4. **Expo web** (`npx expo start -c` → `w`):
 
-   * Starts at `http://localhost:8081`
+   * Loads at `http://localhost:8081`
    * Console shows `[API] Base URL: https://api.consumesafe.app`
-   * Google login can be tested here.
+   * Google login can be tested
 
 5. **Expo mobile with `--tunnel`**:
 
-   * Terminal shows `Metro waiting on exp://...`
-   * Phone opens the app via Expo Go
+   * `npx expo start -c --tunnel`
+   * QR code or emulator opens the app
    * Email/password login works
-   * Rails logs show `/api/v1/me`, `/api/v1/food_events`, `/api/v1/pantries`, `/api/v1/notifications`, etc., returning 200.
+   * Rails logs show `/api/v1/me`, `/api/v1/food_events`, `/api/v1/pantries`, `/api/v1/notifications` returning `200`
 
-If any step doesn’t match these logs, that’s usually the layer where the problem is (Rails, Cloudflare, or Expo).
+If one of these fails, the failing layer (Rails, Cloudflare, or Expo) is the first place to check.

@@ -46,8 +46,13 @@ export async function loginWithEmailPassword(email: string, password: string): P
 // Google sign-in
 export async function loginWithGoogle(): Promise<Result<any>> {
   try {
-    const idToken = await signInWithGoogleAndGetFirebaseIdToken();
-    const session = await postToRails(idToken);
+    const googleData = await signInWithGoogleAndGetFirebaseIdToken();
+    console.log('[Auth] Google sign-in data:', { photoURL: googleData.photoURL, displayName: googleData.displayName });
+    const session = await postToRails(googleData.idToken, {
+      avatar_url: googleData.photoURL,
+      display_name: googleData.displayName,
+      email: googleData.email,
+    });
     if (!session.ok) {
       return { ok: false, reason: session.error || 'Server rejected login' };
     }

@@ -141,7 +141,7 @@ export default function LoginScreen() {
 
                     {/* Forgot Password Link */}
                     <TouchableOpacity
-                        onPress={() => router.push('/auth/reset-password')}
+                        onPress={() => router.push('/auth/forgot-password')}
                         style={{ alignSelf: 'flex-end', marginTop: -8, marginBottom: 8 }}
                         disabled={loading || loadingGoogle || loadingApple}
                     >

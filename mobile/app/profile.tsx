@@ -102,11 +102,21 @@ export default function Profile() {
     // Fix Google profile images - remove size params and use larger size
     const avatarUrl = useMemo(() => {
         const url = user?.avatar_url || user?.profile_picture_url;
+        console.log('[Profile] Avatar URL from user:', url);
+
         if (!url) return 'https://i.pravatar.cc/100?img=12';
 
+
+
         // If it's a Google profile image, strip size params and use s200-c for better quality
+
         if (url.includes('googleusercontent.com')) {
-            return url.replace(/=s\d+-c/, '=s200-c');
+
+            const upgraded = url.replace(/=s\d+-c/, '=s200-c');
+
+            console.log('[Profile] Upgraded Google avatar:', upgraded);
+
+            return upgraded;
         }
 
         return url;
@@ -141,7 +151,8 @@ export default function Profile() {
                     phonenumber: payload.phone, // Note: backend uses 'phonenumber'
                     birthday: toISODateMaybe(payload.birthday),
                     location: payload.location,
-                    avatar_url: payload.profile_picture_url, // Match what modal sends
+                    // Only send avatar_url if it's a non-empty string
+                    ...(payload.profile_picture_url?.trim() ? { avatar_url: payload.profile_picture_url.trim() } : {}),
                     allergies: modalToAllergyArray(payload.allergies, payload.otherAllergy),
                 },
             };
@@ -250,7 +261,7 @@ export default function Profile() {
                     phone: user.phonenumber || user.phone_number || '',
                     birthday: user.birthday || '',
                     location: user.location || '',
-                    profile_picture_url: avatarUrl,
+                    profile_picture_url: user?.avatar_url || user?.profile_picture_url || '',
                     allergies: allergiesToToggleMap(allergies),
                     otherAllergy: firstOther(allergies),
                 }}

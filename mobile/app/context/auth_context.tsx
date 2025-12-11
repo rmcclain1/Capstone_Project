@@ -50,6 +50,7 @@ function normalizeUser(raw: any): User | null {
     if (!raw || typeof raw !== 'object') return null;
     const u = raw as User;
     const allergies = (raw as any).allergies;
+    console.log('[Auth] normalizeUser - avatar_url:', raw.avatar_url, 'profile_picture_url:', raw.profile_picture_url);
     return {
         ...u,
         allergies: Array.isArray(allergies)

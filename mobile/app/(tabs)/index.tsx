@@ -203,11 +203,21 @@ export default function Home() {
     // Fix Google profile images - remove size params and use larger size
     const avatarUrl = useMemo(() => {
         const url = user?.avatar_url || user?.profile_picture_url;
+        console.log('[Home] Avatar URL from user:', url);
+
         if (!url) return 'https://i.pravatar.cc/100?img=12';
 
+
+
         // If it's a Google profile image, strip size params and use s200-c for better quality
+
         if (url.includes('googleusercontent.com')) {
-            return url.replace(/=s\d+-c/, '=s200-c');
+
+            const upgraded = url.replace(/=s\d+-c/, '=s200-c');
+
+            console.log('[Home] Upgraded Google avatar:', upgraded);
+
+            return upgraded;
         }
 
         return url;

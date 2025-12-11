@@ -6,6 +6,7 @@ class Api::V1::SessionsController < ApplicationController
 
   # POST /api/v1/sessions
   # Expect: Authorization: Bearer <FIREBASE_ID_TOKEN>
+  # Optional: { user_info: { avatar_url, display_name, email } }
   # Return: { ok: true, token: <RAILS_JWT>, user: {...} }
   def create
     bearer = request.headers['Authorization'].to_s
@@ -19,8 +20,28 @@ class Api::V1::SessionsController < ApplicationController
     user.email      ||= payload['email']
     user.provider   ||= (payload.dig('firebase', 'sign_in_provider') || 'password')
     user.avatar_url = payload['picture'] if user.avatar_url.blank? && payload['picture'].present?
+    
+    # Handle user_info from mobile app (Google/Apple sign-in with profile data)
+    if params[:user_info].present?
+      user_info = params[:user_info].permit(:avatar_url, :display_name, :email)
+      
+      # Update avatar from mobile app if provided and user doesn't have one
+      if user_info[:avatar_url].present? && user.avatar_url.blank?
+        user.avatar_url = user_info[:avatar_url]
+      end
+      
+      # Parse display_name if provided and user doesn't have name set
+      if user_info[:display_name].present? && user.first_name.blank? && user.last_name.blank?
+        parts = user_info[:display_name].split(' ')
+        user.first_name = parts.first
+        user.last_name  = parts.drop(1).join(' ').presence
+      end
+      
+      # Use email from user_info if not in payload
+      user.email ||= user_info[:email]
+    end
 
-
+    # Fallback to Firebase payload name if still no name set
     if payload['name'].present? && user.first_name.blank? && user.last_name.blank?
       parts = payload['name'].split(' ')
       user.first_name = parts.first
@@ -90,7 +111,6 @@ class Api::V1::SessionsController < ApplicationController
 
   private
 
-
   # Return a full, up-to-date user profile payload
   # Uses User#as_json (which already normalizes phone_number, avatar_url, allergies, etc.)
   def user_payload(u)
@@ -104,5 +124,4 @@ class Api::V1::SessionsController < ApplicationController
 
     base
   end
-
 end

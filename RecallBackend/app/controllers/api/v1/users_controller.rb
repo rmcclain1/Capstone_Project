@@ -98,98 +98,94 @@ class Api::V1::UsersController < ApplicationController
   private
 
   def permitted_update_params
-    # Define all allowed parameters (both old and new field names)
-    allowed = %i[
-      username email first_name last_name 
-      phone_number phonenumber 
-      birthday location 
-      profile_picture_url avatar_url
-      allergies expo_push_token
-    ]
+  # Define all allowed parameters (both old and new field names)
+  allowed = %i[
+    username email first_name last_name 
+    phone_number phonenumber 
+    birthday location 
+    profile_picture_url avatar_url
+    allergies expo_push_token
+  ]
 
-    # Get only columns that exist in the database
-    db_columns = User.column_names.map(&:to_sym)
-    
-    # Permit parameters (including legacy fields)
-    p = params.require(:user).permit(*allowed, allergies: [])
+  # Get only columns that exist in the database
+  db_columns = User.column_names.map(&:to_sym)
+  
+  # Permit parameters (including legacy fields)
+  p = params.require(:user).permit(*allowed, allergies: [])
 
-    # ========================================
-    # Clean Empty Strings
-    # ========================================
-    # Convert empty strings to nil to avoid validation errors
-    # This is important because mobile apps often send "" instead of null
-    p.each do |key, value|
-      if value.is_a?(String) && value.strip.empty?
+  # ========================================
+  # Clean Empty Strings
+  # ========================================
+  # Convert empty strings to nil, BUT remove avatar/profile picture fields entirely if empty
+  p.each do |key, value|
+    if value.is_a?(String) && value.strip.empty?
+      # Special handling for avatar fields - remove them entirely if empty
+      if [:avatar_url, :profile_picture_url].include?(key.to_sym)
+        p.delete(key)
+      else
         p[key] = nil
       end
     end
-
-    # ========================================
-    # Field Mapping for Backward Compatibility
-    # ========================================
-    
-    # Handle phonenumber -> phone_number mapping
-    if p[:phonenumber].present? && db_columns.include?(:phone_number)
-      # If DB has phone_number column, map phonenumber to it
-      p[:phone_number] = p[:phonenumber]
-      p.delete(:phonenumber)
-    elsif p[:phone_number].present? && db_columns.include?(:phonenumber)
-      # If DB has phonenumber column (legacy), map phone_number to it
-      p[:phonenumber] = p[:phone_number]
-      p.delete(:phone_number)
-    elsif p.key?(:phonenumber) && !db_columns.include?(:phone_number) && !db_columns.include?(:phonenumber)
-      # Neither column exists, remove the parameter
-      p.delete(:phonenumber)
-    end
-
-    # Handle avatar_url -> profile_picture_url mapping
-    if p[:avatar_url].present? && db_columns.include?(:profile_picture_url)
-      # If DB has profile_picture_url column, map avatar_url to it
-      p[:profile_picture_url] = p[:avatar_url]
-      p.delete(:avatar_url)
-    elsif p[:profile_picture_url].present? && db_columns.include?(:avatar_url)
-      # If DB has avatar_url column (unlikely), map profile_picture_url to it
-      p[:avatar_url] = p[:profile_picture_url]
-      p.delete(:profile_picture_url)
-    elsif p.key?(:avatar_url) && !db_columns.include?(:profile_picture_url) && !db_columns.include?(:avatar_url)
-      # Neither column exists, remove the parameter
-      p.delete(:avatar_url)
-    end
-
-    # ========================================
-    # Type Coercion
-    # ========================================
-    
-    # Handle birthday as DATE column
-    if p[:birthday].present? && User.columns_hash['birthday']&.type == :date
-      begin
-        p[:birthday] = Date.parse(p[:birthday])
-      rescue ArgumentError, TypeError
-        Rails.logger.warn("Invalid birthday format: #{p[:birthday]}")
-        p[:birthday] = nil
-      end
-    end
-
-    # Handle allergies normalization
-    if p.key?(:allergies)
-      # Only process if allergies is present and not nil
-      if p[:allergies].present?
-        p[:allergies] = normalize_allergies(p[:allergies])
-      else
-        # Empty array or nil - convert to nil for the database
-        p[:allergies] = nil
-      end
-    end
-
-    # Remove any parameters that don't correspond to actual DB columns
-    final_params = p.to_h.select { |key, _| db_columns.include?(key.to_sym) }
-    
-    # Remove nil values to avoid overwriting existing data with nulls
-    # UNLESS the field was explicitly sent as empty (which we converted to nil above)
-    # This allows users to clear fields intentionally
-    
-    ActionController::Parameters.new(final_params).permit!
   end
+
+  # ========================================
+  # Field Mapping for Backward Compatibility
+  # ========================================
+  
+  # Handle phonenumber -> phone_number mapping
+  if p[:phonenumber].present? && db_columns.include?(:phone_number)
+    p[:phone_number] = p[:phonenumber]
+    p.delete(:phonenumber)
+  elsif p[:phone_number].present? && db_columns.include?(:phonenumber)
+    p[:phonenumber] = p[:phone_number]
+    p.delete(:phone_number)
+  elsif p.key?(:phonenumber) && !db_columns.include?(:phone_number) && !db_columns.include?(:phonenumber)
+    p.delete(:phonenumber)
+  end
+
+  # Handle avatar_url -> profile_picture_url mapping
+  # ONLY map if the value is actually present (not nil, not empty)
+  if p[:avatar_url].present? && db_columns.include?(:profile_picture_url)
+    p[:profile_picture_url] = p[:avatar_url]
+    p.delete(:avatar_url)
+  elsif p[:profile_picture_url].present? && db_columns.include?(:avatar_url)
+    p[:avatar_url] = p[:profile_picture_url]
+    p.delete(:profile_picture_url)
+  else
+    # Remove both if neither is present or neither column exists
+    p.delete(:avatar_url) unless p[:avatar_url].present?
+    p.delete(:profile_picture_url) unless p[:profile_picture_url].present?
+  end
+
+  # ========================================
+  # Type Coercion
+  # ========================================
+  
+  # Handle birthday as DATE column
+  if p[:birthday].present? && User.columns_hash['birthday']&.type == :date
+    begin
+      p[:birthday] = Date.parse(p[:birthday])
+    rescue ArgumentError, TypeError
+      Rails.logger.warn("Invalid birthday format: #{p[:birthday]}")
+      p[:birthday] = nil
+    end
+  end
+
+  # Handle allergies normalization
+  if p.key?(:allergies)
+    if p[:allergies].present?
+      p[:allergies] = normalize_allergies(p[:allergies])
+    else
+      p[:allergies] = nil
+    end
+  end
+
+  # Remove any parameters that don't correspond to actual DB columns
+  final_params = p.to_h.select { |key, _| db_columns.include?(key.to_sym) }
+  
+  ActionController::Parameters.new(final_params).permit!
+end
+
 
   def user_params_for_create
     params.require(:user).permit(

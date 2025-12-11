@@ -174,10 +174,25 @@ class User < ApplicationRecord
       base['avatar_url'] = profile_picture_url  # Alias
     elsif has_attribute?(:avatar_url)
       # Database has avatar_url column (from Firebase/Google login)
-      base['avatar_url'] = avatar_url
-      base['profile_picture_url'] = avatar_url  # Alias
-      base['avatar_url'] = Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true) rescue nil
-      base['profile_picture_url'] = base['avatar_url']
+      # Prefer ActiveStorage avatar if attached, otherwise use database URL
+
+      if avatar.attached?
+
+        storage_url = Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true) rescue nil
+
+        base['avatar_url'] = storage_url
+
+        base['profile_picture_url'] = storage_url
+
+      else
+
+        # Use database URL (Google/Firebase avatar)
+
+        base['avatar_url'] = avatar_url
+
+        base['profile_picture_url'] = avatar_url
+
+      end
     end
     
     # Add allergies if column exists

@@ -1,4 +1,4 @@
-// mobile/lib/session.ts
+// mobile/api/session.ts
 import {
     setToken as saveRailsJwt,
     getToken as readRailsJwt,
@@ -21,11 +21,26 @@ function buildApiUrl(path: string) {
 }
 
 // Sends Firebase ID token in Authorization, expects Rails to return its own JWT in { token }
-export async function postToRails(firebaseIdToken: string): Promise<RailsSessionResponse> {
+export async function postToRails(
+    firebaseIdToken: string,
+    userData?: { avatar_url?: string | null; display_name?: string | null; email?: string | null }
+): Promise<RailsSessionResponse> {
     const url = buildApiUrl('/api/v1/sessions');
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${firebaseIdToken}`,
+    };
+
+    let body = undefined;
+    if (userData) {
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({ user_info: userData });
+        console.log('[Session] Sending user data to Rails:', userData);
+    }
+
     const res = await fetch(url, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${firebaseIdToken}` },
+        headers,
+        body,
     });
     const json = await res.json().catch(() => ({}));
     if (res.ok && json?.token) await saveRailsJwt(json.token);
