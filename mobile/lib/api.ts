@@ -3,12 +3,11 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { getToken } from './tokenStorage';
 import { Platform } from 'react-native';
-import { CFG } from './config';
 
-// Use different URL based on platform
-const API_URL = Platform.OS === 'web'
-    ? CFG.API_URL_WEB     // http://192.168.1.42:3000 for web
-    : CFG.API_URL_LAN;    // http://192.168.1.42:3000 for mobile
+// Prefer env var; fall back to production API domain
+const API_URL =
+    process.env.EXPO_PUBLIC_API_BASE_URL ??
+    'https://api.consumesafe.app';
 
 console.log('[API] Platform:', Platform.OS);
 console.log('[API] Base URL:', API_URL);
@@ -22,7 +21,7 @@ export const api = axios.create({
 api.interceptors.request.use(
     async (config) => {
         console.log('[API] Making request:', config.method?.toUpperCase(), config.url);
-        console.log('[API] Full URL:', API_URL + config.url);
+        console.log('[API] Full URL:', API_URL + (config.url || ''));
 
         try {
             const token = await getToken();
@@ -59,7 +58,7 @@ api.interceptors.response.use(
             url,
             message: err.message,
             code: err.code,
-            data: err?.response?.data
+            data: err?.response?.data,
         });
 
         if (status === 401 && !url.endsWith('/api/v1/sessions') && !url.endsWith('/api/v1/me')) {

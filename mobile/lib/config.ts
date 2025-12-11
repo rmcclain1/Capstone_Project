@@ -40,8 +40,8 @@ export const CFG = {
     FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? cfg.firebase?.appId ?? '',
     FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID ?? cfg.firebase?.measurementId ?? '',
 
-    API_URL_WEB: process.env.EXPO_PUBLIC_API_URL_WEB ?? cfg.api?.webBaseUrl ?? 'http://192.168.1.42:3000',
-    API_URL_LAN: process.env.EXPO_PUBLIC_API_URL_LAN ?? cfg.api?.lanBaseUrl ?? 'http://192.168.1.42:3000'
+    API_URL_WEB: process.env.EXPO_PUBLIC_API_URL_WEB ?? cfg.api?.webBaseUrl ?? 'https://api.consumesafe.app',
+    API_URL_LAN: process.env.EXPO_PUBLIC_API_URL_LAN ?? cfg.api?.lanBaseUrl ?? 'https://api.consumesafe.app'
 } as const;
 
 console.log('[CONFIG] Final CFG values:', {

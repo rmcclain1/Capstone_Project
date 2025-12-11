@@ -49,7 +49,7 @@
       "reactCompiler": false
     },
     "extra": {
-      "EXPO_PUBLIC_API_URL": "https://cos-interventions-evanescence-canvas.trycloudflare.com",
+      "EXPO_PUBLIC_API_URL": "https://api.consumesafe.app",
       "router": {
         "origin": "https://recall-app.com"
       },

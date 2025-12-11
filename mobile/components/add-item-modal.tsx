@@ -2,7 +2,9 @@ import React, { useRef, useState, useMemo } from 'react';
 import {
     View, Text, StyleSheet, Modal, Animated, Easing,
     SafeAreaView, ScrollView, TextInput, Image, Platform, Pressable, Alert,
+    KeyboardAvoidingView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '@/constants/theme_provider';
 
@@ -48,6 +50,8 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
     const [name, setName] = useState('');
     const [imageUri, setImageUri] = useState<string | undefined>();
     const [expiresAt, setExpiresAt] = useState(''); // MM/DD/YYYY (UI-only)
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [manufacturer, setManufacturer] = useState('');
     const [lotNumber, setLotNumber] = useState('');
     const [quantity, setQuantity] = useState('');
@@ -57,6 +61,33 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
 
     const isValidImageUrl = (u?: string) =>
         !!u && /^https?:\/\/.+/i.test(u.trim());
+
+    const formatDate = (date: Date): string => {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    };
+
+    const handleDateChange = (event: any, date?: Date) => {
+        // On Android, the picker closes automatically
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+        }
+
+        if (date) {
+            setSelectedDate(date);
+            setExpiresAt(formatDate(date));
+        }
+    };
+
+    const openDatePicker = () => {
+        setShowDatePicker(true);
+    };
+
+    const closeDatePicker = () => {
+        setShowDatePicker(false);
+    };
 
     const submit = () => {
         const trimmedName = name.trim();
@@ -85,6 +116,7 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
         setName('');
         setImageUri(undefined);
         setExpiresAt('');
+        setSelectedDate(undefined);
         setManufacturer('');
         setLotNumber('');
         setQuantity('');
@@ -99,155 +131,188 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
         <Modal visible={visible} transparent animationType="none" onShow={open} onRequestClose={close}>
             <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)', opacity: backdrop }]} />
             <SafeAreaView style={styles.safe}>
-                <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-                    {/* Header */}
-                    <View style={styles.headerRow}>
-                        <Pressable
-                            onPress={resetAndClose}
-                            style={styles.roundIcon}
-                            hitSlop={12}
-                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                        >
-                            <Ionicons name="close" size={20} color={theme.text} />
-                        </Pressable>
-                        <Text style={styles.title}>Add Item</Text>
-                        <View style={{ width: 36 }} />
-                    </View>
-
-                    {/* Content */}
-                    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                        <Text style={styles.label}>Item Name</Text>
-                        <TextInput
-                            placeholder="Enter item name"
-                            placeholderTextColor={placeholder}
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                        />
-
-                        {/* Image */}
-                        <View style={{ marginTop: 14 }}>
-                            {imageUri ? (
-                                <Image source={{ uri: imageUri }} style={styles.image} />
-                            ) : (
-                                <View style={[styles.image, { backgroundColor: theme.surface }]} />
-                            )}
-                            <Text style={styles.label}>Image URL (optional)</Text>
-                            <TextInput
-                                placeholder="https://example.com/image.jpg"
-                                placeholderTextColor={placeholder}
-                                style={styles.input}
-                                value={imageUri}
-                                onChangeText={setImageUri}
-                                autoCapitalize="none"
-                                keyboardType="url"
-                            />
-                        </View>
-
-                        {/* Dates */}
-                        <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
-                        <View style={styles.inputWithIcon}>
-                            <TextInput
-                                placeholder="MM/DD/YYYY"
-                                placeholderTextColor={placeholder}
-                                style={[styles.input, { marginBottom: 0, flex: 1, borderWidth: 0, backgroundColor: 'transparent' }]}
-                                value={expiresAt}
-                                onChangeText={setExpiresAt}
-                                keyboardType="numbers-and-punctuation"
-                                autoCapitalize="none"
-                            />
-                            <Ionicons name="calendar-outline" size={18} color={theme.iconDim} />
-                        </View>
-
-                        {/* Manufacturer */}
-                        <Text style={styles.label}>Manufacturer</Text>
-                        <TextInput
-                            placeholder="Enter manufacturer"
-                            placeholderTextColor={placeholder}
-                            style={styles.input}
-                            value={manufacturer}
-                            onChangeText={setManufacturer}
-                        />
-
-                        {/* Lot */}
-                        <Text style={styles.label}>Lot Number</Text>
-                        <TextInput
-                            placeholder="Enter lot number"
-                            placeholderTextColor={placeholder}
-                            style={styles.input}
-                            value={lotNumber}
-                            onChangeText={setLotNumber}
-                            autoCapitalize="none"
-                        />
-
-                        {/* Quantity */}
-                        <Text style={styles.label}>Quantity</Text>
-                        <TextInput
-                            placeholder="e.g., 3, 2 packs, 500g"
-                            placeholderTextColor={placeholder}
-                            style={styles.input}
-                            value={quantity}
-                            onChangeText={setQuantity}
-                            keyboardType="default" // keep flexible (you store string)
-                        />
-
-                        {/* Country */}
-                        <Text style={styles.label}>Country of Origin</Text>
-                        <Pressable
-                            style={[styles.input, styles.selectRow]}
-                            onPress={() => setCountryOpen(v => !v)}
-                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                        >
-                            <Text style={{ color: country ? theme.text : placeholder }}>
-                                {country || 'Select country'}
-                            </Text>
-                            <Ionicons name={countryOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.iconDim} />
-                        </Pressable>
-                        {countryOpen && (
-                            <View style={styles.dropdown}>
-                                {COUNTRIES.map(c => (
-                                    <Pressable
-                                        key={c}
-                                        style={styles.dropdownRow}
-                                        onPress={() => { setCountry(c); setCountryOpen(false); }}
-                                        android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
-                                    >
-                                        <Text style={{ color: theme.text }}>{c}</Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        )}
-
-                        {/* Allergens */}
-                        <Text style={styles.label}>Allergens</Text>
-                        <TextInput
-                            placeholder="e.g., Peanuts, Soy"
-                            placeholderTextColor={placeholder}
-                            style={styles.input}
-                            value={allergens}
-                            onChangeText={setAllergens}
-                        />
-
-                        {/* Footer */}
-                        <View style={styles.footerRow}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                >
+                    <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+                        {/* Header */}
+                        <View style={styles.headerRow}>
                             <Pressable
                                 onPress={resetAndClose}
-                                style={styles.cancelBtn}
+                                style={styles.roundIcon}
+                                hitSlop={12}
                                 android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
                             >
-                                <Text style={styles.cancelText}>Cancel</Text>
+                                <Ionicons name="close" size={20} color={theme.text} />
                             </Pressable>
-                            <Pressable
-                                onPress={submit}
-                                style={[styles.addBtn, disabled && { opacity: 0.6 }]}
-                                disabled={disabled}
-                                android_ripple={Platform.OS === 'android' ? { color: theme.primary } : undefined}
-                            >
-                                <Text style={styles.addText}>Add</Text>
-                            </Pressable>
+                            <Text style={styles.title}>Add Item</Text>
+                            <View style={{ width: 36 }} />
                         </View>
-                    </ScrollView>
-                </Animated.View>
+
+                        {/* Content */}
+                        <ScrollView
+                            contentContainerStyle={styles.content}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <Text style={styles.label}>Item Name</Text>
+                            <TextInput
+                                placeholder="Enter item name"
+                                placeholderTextColor={placeholder}
+                                style={styles.input}
+                                value={name}
+                                onChangeText={setName}
+                            />
+
+                            {/* Image */}
+                            <View style={{ marginTop: 14 }}>
+                                {imageUri ? (
+                                    <Image source={{ uri: imageUri }} style={styles.image} />
+                                ) : (
+                                    <View style={[styles.image, { backgroundColor: theme.surface }]} />
+                                )}
+                                <Text style={styles.label}>Image URL (optional)</Text>
+                                <TextInput
+                                    placeholder="https://example.com/image.jpg"
+                                    placeholderTextColor={placeholder}
+                                    style={styles.input}
+                                    value={imageUri}
+                                    onChangeText={setImageUri}
+                                    autoCapitalize="none"
+                                    keyboardType="url"
+                                />
+                            </View>
+
+                            {/* Expiration Date with Clickable Calendar Icon */}
+                            <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
+                            <Pressable style={styles.inputWithIcon} onPress={openDatePicker}>
+                                <TextInput
+                                    placeholder="MM/DD/YYYY"
+                                    placeholderTextColor={placeholder}
+                                    style={[styles.input, { marginBottom: 0, flex: 1, borderWidth: 0, backgroundColor: 'transparent' }]}
+                                    value={expiresAt}
+                                    onChangeText={setExpiresAt}
+                                    keyboardType="numbers-and-punctuation"
+                                    autoCapitalize="none"
+                                    editable={false}
+                                    pointerEvents="none"
+                                />
+                                <Pressable onPress={openDatePicker} hitSlop={12}>
+                                    <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+                                </Pressable>
+                            </Pressable>
+
+                            {/* Date Picker */}
+                            {showDatePicker && (
+                                <>
+                                    <DateTimePicker
+                                        value={selectedDate || new Date()}
+                                        mode="date"
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        onChange={handleDateChange}
+                                        minimumDate={new Date()}
+                                    />
+                                    {/* iOS needs a Done button */}
+                                    {Platform.OS === 'ios' && (
+                                        <Pressable style={styles.doneButton} onPress={closeDatePicker}>
+                                            <Text style={styles.doneButtonText}>Done</Text>
+                                        </Pressable>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Manufacturer */}
+                            <Text style={styles.label}>Manufacturer</Text>
+                            <TextInput
+                                placeholder="Enter manufacturer"
+                                placeholderTextColor={placeholder}
+                                style={styles.input}
+                                value={manufacturer}
+                                onChangeText={setManufacturer}
+                            />
+
+                            {/* Lot */}
+                            <Text style={styles.label}>Lot Number</Text>
+                            <TextInput
+                                placeholder="Enter lot number"
+                                placeholderTextColor={placeholder}
+                                style={styles.input}
+                                value={lotNumber}
+                                onChangeText={setLotNumber}
+                                autoCapitalize="none"
+                            />
+
+                            {/* Quantity */}
+                            <Text style={styles.label}>Quantity</Text>
+                            <TextInput
+                                placeholder="e.g., 3, 2 packs, 500g"
+                                placeholderTextColor={placeholder}
+                                style={styles.input}
+                                value={quantity}
+                                onChangeText={setQuantity}
+                                keyboardType="default"
+                            />
+
+                            {/* Country */}
+                            <Text style={styles.label}>Country of Origin</Text>
+                            <Pressable
+                                style={[styles.input, styles.selectRow]}
+                                onPress={() => setCountryOpen(v => !v)}
+                                android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                            >
+                                <Text style={{ color: country ? theme.text : placeholder }}>
+                                    {country || 'Select country'}
+                                </Text>
+                                <Ionicons name={countryOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.iconDim} />
+                            </Pressable>
+                            {countryOpen && (
+                                <View style={styles.dropdown}>
+                                    {COUNTRIES.map(c => (
+                                        <Pressable
+                                            key={c}
+                                            style={styles.dropdownRow}
+                                            onPress={() => { setCountry(c); setCountryOpen(false); }}
+                                            android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                                        >
+                                            <Text style={{ color: theme.text }}>{c}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            )}
+
+                            {/* Allergens */}
+                            <Text style={styles.label}>Allergens</Text>
+                            <TextInput
+                                placeholder="e.g., Peanuts, Soy"
+                                placeholderTextColor={placeholder}
+                                style={styles.input}
+                                value={allergens}
+                                onChangeText={setAllergens}
+                            />
+
+                            {/* Footer */}
+                            <View style={styles.footerRow}>
+                                <Pressable
+                                    onPress={resetAndClose}
+                                    style={styles.cancelBtn}
+                                    android_ripple={Platform.OS === 'android' ? { color: theme.border } : undefined}
+                                >
+                                    <Text style={styles.cancelText}>Cancel</Text>
+                                </Pressable>
+                                <Pressable
+                                    onPress={submit}
+                                    style={[styles.addBtn, disabled && { opacity: 0.6 }]}
+                                    disabled={disabled}
+                                    android_ripple={Platform.OS === 'android' ? { color: theme.primary } : undefined}
+                                >
+                                    <Text style={styles.addText}>Add</Text>
+                                </Pressable>
+                            </View>
+                        </ScrollView>
+                    </Animated.View>
+                </KeyboardAvoidingView>
             </SafeAreaView>
         </Modal>
     );
@@ -327,6 +392,20 @@ const makeStyles = (t: any) =>
             paddingHorizontal: 12,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: t.border,
+        },
+        doneButton: {
+            backgroundColor: t.primary,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 10,
+            alignSelf: 'center',
+            marginTop: 10,
+            marginBottom: 10,
+        },
+        doneButtonText: {
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: '700',
         },
 
         footerRow: { flexDirection: 'row', gap: 12, marginTop: 12, marginBottom: 8 },
