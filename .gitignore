@@ -33,3 +33,5 @@ yarn-error.log
 
 RecallBackend/vendor/
 .claude-worktrees/
+RecallBackend/.env
+RecallBackend/.env.*
