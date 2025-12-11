@@ -90,22 +90,19 @@ class Api::V1::SessionsController < ApplicationController
 
   private
 
-  # Make this tolerant of missing columns/attrs so it never crashes
-  def user_payload(u)
-    {
-      id: u.id,
-      email: u.try(:email),
-      username: u.try(:username),
-      first_name: u.try(:first_name),
-      last_name: u.try(:last_name),
-      name: [u.try(:first_name), u.try(:last_name)].compact.join(' ').presence,
-      avatar_url: u.try(:avatar_url),
-      provider: u.try(:provider),
-      firebase_uid: u.try(:firebase_uid),
-      apple_uid: u.try(:apple_uid),
 
-      # If you don't have a `location` column, this will just be nil instead of raising.
-      state: u.try(:location)
-    }
+  # Return a full, up-to-date user profile payload
+  # Uses User#as_json (which already normalizes phone_number, avatar_url, allergies, etc.)
+  def user_payload(u)
+    base = u.as_json
+
+    # Ensure we always have a simple "name" field
+    base['name'] ||= [u.try(:first_name), u.try(:last_name)].compact.join(' ').presence
+
+    # Backwards-compatible alias for location
+    base['state'] ||= u.try(:location)
+
+    base
   end
+
 end
