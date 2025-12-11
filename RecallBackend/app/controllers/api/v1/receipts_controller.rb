@@ -21,8 +21,7 @@ module Api
         )
         rec.image.attach(params[:image])
 
-        # TODO: Move to background job (Sidekiq)
-        # ReceiptProcessingJob.perform_later(rec.id)
+      
         
         # For now, process synchronously with error handling
         begin

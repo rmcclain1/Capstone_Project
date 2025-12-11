@@ -14,7 +14,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadReceipt, getReceipt } from '@/api/receipts';
 import http from '@/lib/http';
 import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function ReceiptScan() {
     const router = useRouter();
@@ -22,6 +21,12 @@ export default function ReceiptScan() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [processingStatus, setProcessingStatus] = useState('');
+
+    const resetState = () => {
+        setUri(null);
+        setResult(null);
+        setProcessingStatus('');
+    };
 
     const pick = useCallback(async () => {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -44,10 +49,7 @@ export default function ReceiptScan() {
         }
     }, []);
 
-    const pollReceipt = async (
-        receiptId: string,
-        maxAttempts = 15
-    ): Promise<any> => {
+    const pollReceipt = async (receiptId: string, maxAttempts = 15): Promise<any> => {
         for (let i = 0; i < maxAttempts; i++) {
             setProcessingStatus(`Processing receipt... (${i + 1}/${maxAttempts})`);
 
@@ -60,7 +62,7 @@ export default function ReceiptScan() {
                 throw new Error('Receipt processing failed on server');
             }
 
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         throw new Error('Receipt processing timeout - please try again');
@@ -143,9 +145,7 @@ export default function ReceiptScan() {
                 [{ text: 'View Pantry', onPress: () => router.push('/(tabs)/pantry') }]
             );
 
-            setUri(null);
-            setResult(null);
-            setProcessingStatus('');
+            resetState();
         } catch (e: any) {
             const msg =
                 e?.response?.data?.errors?.join(', ') ||
@@ -157,34 +157,12 @@ export default function ReceiptScan() {
         }
     }, [result, router]);
 
-    const handleCancel = () => {
-        // navigate back to previous screen
-        router.back();
-    };
-
     return (
         <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         >
-            {/* Header with X / cancel */}
-            <View style={styles.headerRow}>
-                <Pressable
-                    onPress={handleCancel}
-                    hitSlop={10}
-                    disabled={loading}
-                    style={({ pressed }) => [
-                        styles.cancelButton,
-                        loading && { opacity: 0.4 },
-                        pressed && !loading && { opacity: 0.6 },
-                    ]}
-                >
-                    <Ionicons name="close" size={22} color="#111827" />
-                </Pressable>
-                <Text style={styles.headerTitle}>Scan Receipt</Text>
-                {/* spacer for symmetry */}
-                <View style={{ width: 32 }} />
-            </View>
+            <Text style={styles.title}>Scan Receipt</Text>
 
             {!uri ? (
                 <View>
@@ -216,14 +194,44 @@ export default function ReceiptScan() {
                             style={[styles.card, styles.secondaryBtn, { flex: 1 }]}
                             disabled={loading}
                         >
-                            <Text style={[styles.btnText, styles.secondaryText]}>Retake</Text>
+                            <Text
+                                style={[styles.btnText, styles.secondaryText]}
+                            >
+                                Retake
+                            </Text>
                         </Pressable>
                         <Pressable
                             onPress={submit}
-                            style={[styles.card, { flex: 1 }, loading && { opacity: 0.6 }]}
+                            style={[
+                                styles.card,
+                                { flex: 1 },
+                                loading && { opacity: 0.6 },
+                            ]}
                             disabled={loading}
                         >
                             <Text style={styles.btnText}>Upload & Parse</Text>
+                        </Pressable>
+                    </View>
+
+                    {/* Cancel button */}
+                    <View style={{ alignItems: 'center' }}>
+                        <Pressable
+                            onPress={() => {
+                                resetState();
+                                router.back();
+                            }}
+                            style={[
+                                styles.card,
+                                styles.secondaryBtn,
+                                { marginTop: 12, width: '60%' },
+                            ]}
+                            disabled={loading}
+                        >
+                            <Text
+                                style={[styles.btnText, styles.secondaryText]}
+                            >
+                                Cancel
+                            </Text>
                         </Pressable>
                     </View>
                 </>
@@ -232,7 +240,9 @@ export default function ReceiptScan() {
             {loading && (
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color="#2362FF" />
-                    <Text style={{ marginTop: 8, fontSize: 14, color: '#666' }}>
+                    <Text
+                        style={{ marginTop: 8, fontSize: 14, color: '#666' }}
+                    >
                         {processingStatus || 'Processing...'}
                     </Text>
                 </View>
@@ -248,8 +258,16 @@ export default function ReceiptScan() {
                             {result.items.map((it: any, i: number) => (
                                 <View key={i} style={styles.itemRow}>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontWeight: '600', fontSize: 15 }}>
-                                            {it.matched?.name || it.name || it.raw || 'Unknown Item'}
+                                        <Text
+                                            style={{
+                                                fontWeight: '600',
+                                                fontSize: 15,
+                                            }}
+                                        >
+                                            {it.matched?.name ||
+                                                it.name ||
+                                                it.raw ||
+                                                'Unknown Item'}
                                         </Text>
                                         {it.matched?.brand && (
                                             <Text
@@ -275,7 +293,10 @@ export default function ReceiptScan() {
                                     </Text>
                                 </View>
                             ))}
-                            <Pressable onPress={addAll} style={[styles.card, { marginTop: 16 }]}>
+                            <Pressable
+                                onPress={addAll}
+                                style={[styles.card, { marginTop: 16 }]}
+                            >
                                 <Text style={styles.btnText}>
                                     Add All to Pantry ({result.items.length})
                                 </Text>
@@ -290,8 +311,8 @@ export default function ReceiptScan() {
                                     textAlign: 'center',
                                 }}
                             >
-                                No items detected in receipt.{'\n'}Try retaking with better
-                                lighting.
+                                No items detected in receipt.{'\n'}Try retaking
+                                with better lighting.
                             </Text>
                             <Pressable
                                 onPress={pick}
@@ -301,7 +322,12 @@ export default function ReceiptScan() {
                                     { marginTop: 12, width: '100%' },
                                 ]}
                             >
-                                <Text style={[styles.btnText, styles.secondaryText]}>
+                                <Text
+                                    style={[
+                                        styles.btnText,
+                                        styles.secondaryText,
+                                    ]}
+                                >
                                     Retake Photo
                                 </Text>
                             </Pressable>
@@ -314,25 +340,11 @@ export default function ReceiptScan() {
 }
 
 const styles = StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    cancelButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#E5E7EB',
-    },
-    headerTitle: {
-        flex: 1,
-        textAlign: 'center',
+    title: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#111827',
+        color: '#111',
+        marginBottom: 8,
     },
     card: {
         height: 56,

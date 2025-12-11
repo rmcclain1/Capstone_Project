@@ -64,6 +64,7 @@ group :development, :test do
 
   # OCR / Receipts
   gem "googleauth", "~> 1.9"
+  
 
   #apple login
   gem "apple_id"
