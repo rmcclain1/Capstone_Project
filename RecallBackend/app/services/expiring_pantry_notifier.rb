@@ -3,8 +3,8 @@ class ExpiringPantryNotifier
   def self.run_daily_check
     Rails.logger.info "Starting daily expiration check..."
     
-    # Check items expiring in the next 3 days
-    notify_expiring_soon(days: 3)
+    # Check items expiring in the next 7 days (changed from 3)
+    notify_expiring_soon(days: 7)
     
     # Check items expiring today
     notify_expiring_today
@@ -13,7 +13,7 @@ class ExpiringPantryNotifier
     notify_expired_items
   end
 
-  def self.notify_expiring_soon(days: 3)
+  def self.notify_expiring_soon(days: 7)  # CHANGED DEFAULT FROM 3 TO 7
     pantries = Pantry.where('expiration_date <= ? AND expiration_date > ?', 
                             days.days.from_now, Date.current)
     

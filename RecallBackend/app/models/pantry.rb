@@ -260,7 +260,7 @@ class Pantry < ApplicationRecord
         :expired
       elsif days == 0
         :expiring_today
-      elsif days <= 3
+      elsif days <= 7
         :expiring_soon
       else
         nil

@@ -100,6 +100,8 @@ class Api::V1::SessionsController < ApplicationController
 
   # DELETE /api/v1/sessions  (client just forgets token; nothing to revoke)
   def destroy
+    # Clear push token on logout so device can be used by another user
+    @current_user&.unregister_push_token
     render json: { ok: true, message: 'Logged out' }, status: :ok
   end
 

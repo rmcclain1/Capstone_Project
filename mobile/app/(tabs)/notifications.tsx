@@ -1,5 +1,5 @@
 // app/(tabs)/notifications.tsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/constants/theme_provider';
 import {
     getNotifications,
@@ -30,9 +31,12 @@ export default function NotificationsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        loadNotifications();
-    }, []);
+    // Reload notifications every time the tab comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            loadNotifications();
+        }, [])
+    );
 
     const loadNotifications = async () => {
         try {

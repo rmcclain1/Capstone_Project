@@ -1,5 +1,5 @@
 // app/scan/barcode.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,18 +11,22 @@ export default function BarcodeScan() {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [barcode, setBarcode] = useState<string | null>(null);
+    const scanInProgress = useRef(false); // ADDED: Prevent multiple scans
 
     // Reset scanned state when component unmounts or when user navigates away
     useEffect(() => {
         return () => {
             setScanned(false);
             setBarcode(null);
+            scanInProgress.current = false;
         };
     }, []);
 
     const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
-        if (scanned) return; // Prevent multiple scans
-
+        // IMPROVED: Use ref for immediate check (state updates are async)
+        if (scanned || scanInProgress.current) return;
+        
+        scanInProgress.current = true; // Block immediately
         setScanned(true);
         setBarcode(data);
         console.log(`Barcode scanned: Type=${type}, Data=${data}`);
@@ -36,6 +40,7 @@ export default function BarcodeScan() {
                     onPress: () => {
                         setScanned(false);
                         setBarcode(null);
+                        scanInProgress.current = false;
                     }
                 },
                 {
@@ -47,16 +52,17 @@ export default function BarcodeScan() {
                     onPress: () => {
                         setScanned(false);
                         setBarcode(null);
-                        router.back();
+                        scanInProgress.current = false;
+                        router.replace('/(tabs)/pantry');
                     }
                 },
             ],
             {
                 cancelable: false,
                 onDismiss: () => {
-                    // Reset scanned state if alert is dismissed
                     setScanned(false);
                     setBarcode(null);
+                    scanInProgress.current = false;
                 }
             }
         );
@@ -77,15 +83,17 @@ export default function BarcodeScan() {
                         onPress: () => {
                             setScanned(false);
                             setBarcode(null);
+                            scanInProgress.current = false;
                         }
                     },
-                    { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
+                    { text: 'Enter Manually', onPress: () => router.replace('/manual-entry') },
                     {
                         text: 'Cancel',
                         onPress: () => {
                             setScanned(false);
                             setBarcode(null);
-                            router.back();
+                            scanInProgress.current = false;
+                            router.replace('/(tabs)/pantry');
                         }
                     },
                 ]
@@ -134,9 +142,18 @@ export default function BarcodeScan() {
                         onPress: () => {
                             setScanned(false);
                             setBarcode(null);
+                            scanInProgress.current = false;
                             router.replace('/(tabs)/pantry');
                         }
-                    }]
+                    }],
+                    {
+                        onDismiss: () => {
+                            setScanned(false);
+                            setBarcode(null);
+                            scanInProgress.current = false;
+                            router.replace('/(tabs)/pantry');
+                        }
+                    }
                 );
             } else {
                 // Product not found in OpenFoodFacts database
@@ -161,6 +178,7 @@ export default function BarcodeScan() {
                                         onPress: () => {
                                             setScanned(false);
                                             setBarcode(null);
+                                            scanInProgress.current = false;
                                             router.replace('/(tabs)/pantry');
                                         }
                                     }]
@@ -169,10 +187,13 @@ export default function BarcodeScan() {
                                 Alert.alert('Error', error?.response?.data?.errors?.join(', ') || 'Failed to add item');
                                 setScanned(false);
                                 setBarcode(null);
+                                scanInProgress.current = false;
                             }
                         } else {
                             setScanned(false);
                             setBarcode(null);
+                            scanInProgress.current = false;
+                            router.replace('/(tabs)/pantry');
                         }
                     },
                     'plain-text'
@@ -191,16 +212,19 @@ export default function BarcodeScan() {
                             onPress: () => {
                                 setScanned(false);
                                 setBarcode(null);
+                                scanInProgress.current = false;
                                 handleAddToPantry(barcodeData);
                             }
                         },
-                        { text: 'Enter Manually', onPress: () => router.push('/manual-entry') },
+                        { text: 'Enter Manually', onPress: () => router.replace('/manual-entry') },
                         {
                             text: 'Cancel',
                             style: 'cancel',
                             onPress: () => {
                                 setScanned(false);
                                 setBarcode(null);
+                                scanInProgress.current = false;
+                                router.replace('/(tabs)/pantry');
                             }
                         },
                     ]
@@ -215,6 +239,7 @@ export default function BarcodeScan() {
                             onPress: () => {
                                 setScanned(false);
                                 setBarcode(null);
+                                scanInProgress.current = false;
                             }
                         },
                         {
@@ -222,7 +247,8 @@ export default function BarcodeScan() {
                             onPress: () => {
                                 setScanned(false);
                                 setBarcode(null);
-                                router.back();
+                                scanInProgress.current = false;
+                                router.replace('/(tabs)/pantry');
                             }
                         },
                     ]
@@ -255,7 +281,7 @@ export default function BarcodeScan() {
                 </Pressable>
                 <Pressable
                     style={[styles.button, styles.secondaryButton]}
-                    onPress={() => router.back()}
+                    onPress={() => router.replace('/(tabs)/pantry')}
                 >
                     <Text style={[styles.buttonText, styles.secondaryButtonText]}>Go Back</Text>
                 </Pressable>
@@ -283,7 +309,8 @@ export default function BarcodeScan() {
                         onPress={() => {
                             setScanned(false);
                             setBarcode(null);
-                            router.back();
+                            scanInProgress.current = false;
+                            router.replace('/(tabs)/pantry');
                         }}
                     >
                         <Ionicons name="close" size={32} color="white" />

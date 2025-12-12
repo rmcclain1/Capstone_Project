@@ -1,7 +1,8 @@
 // app/utils/notifications.ts
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
+import Constants from 'expo-constants';
 
 Notifications.setNotificationHandler({
     handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
@@ -39,13 +40,33 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
         if (finalStatus !== 'granted') {
             console.log('[Notifications] Permission denied');
+            
+            // Alert user that notifications are disabled
+            Alert.alert(
+                'Notifications Disabled',
+                'You won\'t receive alerts for expiring items. You can enable notifications in your device settings.',
+                [{ text: 'OK' }]
+            );
+            
             return null;
         }
 
         console.log('[Notifications] Permission granted, getting token...');
 
-        // Get Expo push token - works in Expo Go and emulators for testing
-        const tokenData = await Notifications.getExpoPushTokenAsync();
+        // Get projectId from app config
+        const projectId =
+            Constants.expoConfig?.extra?.eas?.projectId ??
+            Constants.easConfig?.projectId;
+
+        if (!projectId) {
+            console.warn('[Notifications] No projectId found - token retrieval may fail');
+        }
+
+        // Get Expo push token with projectId
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId: projectId,
+        });
+        
         token = tokenData.data;
         console.log('[Notifications] Expo push token:', token);
 

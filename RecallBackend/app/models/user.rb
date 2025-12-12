@@ -129,11 +129,18 @@ class User < ApplicationRecord
     notifications.unread.count
   end
 
-  # Register or update Expo push token
+    # Register or update Expo push token
   def register_push_token(token)
     return if token.blank?
-    update(expo_push_token: token) unless expo_push_token == token
+    return if expo_push_token == token # Already registered to this user
+    
+    # Clear this token from any other user (device can only belong to one user)
+    User.where(expo_push_token: token).where.not(id: id).update_all(expo_push_token: nil)
+    
+    # Now assign to current user
+    update(expo_push_token: token)
   end
+
 
   # Unregister push token (on logout)
   def unregister_push_token

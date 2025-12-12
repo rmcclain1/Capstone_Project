@@ -10,7 +10,10 @@ import {
     ActivityIndicator,
     ScrollView,
     useColorScheme,
+    Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadReceipt, getReceipt } from '@/api/receipts';
 import http from '@/lib/http';
@@ -158,7 +161,7 @@ export default function ReceiptScan() {
             Alert.alert(
                 'Success!',
                 `Added ${result.items.length} item${result.items.length > 1 ? 's' : ''} to your pantry`,
-                [{ text: 'View Pantry', onPress: () => router.push('/(tabs)/pantry') }],
+                [{ text: 'View Pantry', onPress: () => router.replace('/(tabs)/pantry') }],
             );
 
             resetState();
@@ -174,218 +177,69 @@ export default function ReceiptScan() {
     }, [result, router]);
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: bgColor }]}
-            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-        >
-            <Text style={[styles.title, { color: titleColor }]}>Scan Receipt</Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]} edges={['top', 'bottom']}>
+            {/* Header */}
+            <View style={styles.header}>
+                <Pressable
+                    onPress={() => {
+                        resetState();
+                        router.replace('/(tabs)/pantry');
+                    }}
+                    style={styles.backButton}
+                    hitSlop={12}
+                >
+                    <Ionicons name="arrow-back" size={24} color={titleColor} />
+                </Pressable>
+                <Text style={[styles.headerTitle, { color: titleColor }]}>Scan Receipt</Text>
+                <View style={{ width: 24 }} />
+            </View>
 
-            {!uri ? (
-                <View>
-                    <Text
-                        style={[
-                            styles.helpText,
-                            { color: subtitleColor, backgroundColor: helpBg },
-                        ]}
-                    >
-                        Tips for best results:{'\n'}
-                        • Ensure good lighting{'\n'}
-                        • Flatten the receipt{'\n'}
-                        • Avoid glare and shadows
-                    </Text>
-                    <Pressable
-                        onPress={pick}
-                        style={[styles.card, { backgroundColor: cardBg }]}
-                    >
-                        <Text style={styles.btnText}>Take Receipt Photo</Text>
-                    </Pressable>
-                </View>
-            ) : (
-                <>
-                    <Image
-                        source={{ uri }}
-                        style={{
-                            width: '100%',
-                            height: 320,
-                            borderRadius: 12,
-                            marginBottom: 12,
-                        }}
-                        resizeMode="contain"
-                    />
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {!uri ? (
+                    <View>
+                        <Text
+                            style={[
+                                styles.helpText,
+                                { color: subtitleColor, backgroundColor: helpBg },
+                            ]}
+                        >
+                            Tips for best results:{'\n'}
+                            • Ensure good lighting{'\n'}
+                            • Flatten the receipt{'\n'}
+                            • Avoid glare and shadows
+                        </Text>
                         <Pressable
                             onPress={pick}
-                            style={[
-                                styles.card,
-                                styles.secondaryBtn,
-                                {
-                                    flex: 1,
-                                    backgroundColor: secondaryBg,
-                                    borderColor: secondaryBorder,
-                                },
-                            ]}
-                            disabled={loading}
+                            style={[styles.card, { backgroundColor: cardBg }]}
                         >
-                            <Text
-                                style={[
-                                    styles.btnText,
-                                    styles.secondaryText,
-                                    { color: secondaryTextColor },
-                                ]}
-                            >
-                                Retake
-                            </Text>
-                        </Pressable>
-                        <Pressable
-                            onPress={submit}
-                            style={[
-                                styles.card,
-                                { flex: 1, backgroundColor: cardBg },
-                                loading && { opacity: 0.6 },
-                            ]}
-                            disabled={loading}
-                        >
-                            <Text style={styles.btnText}>Upload & Parse</Text>
+                            <Ionicons name="camera" size={24} color="white" style={{ marginRight: 8 }} />
+                            <Text style={styles.btnText}>Take Receipt Photo</Text>
                         </Pressable>
                     </View>
-
-                    {/* Cancel button */}
-                    <View style={{ alignItems: 'center' }}>
-                        <Pressable
-                            onPress={() => {
-                                resetState();
-                                router.back();
-                            }}
-                            style={[
-                                styles.card,
-                                styles.secondaryBtn,
-                                {
-                                    marginTop: 12,
-                                    width: '60%',
-                                    backgroundColor: secondaryBg,
-                                    borderColor: secondaryBorder,
-                                },
-                            ]}
-                            disabled={loading}
-                        >
-                            <Text
-                                style={[
-                                    styles.btnText,
-                                    styles.secondaryText,
-                                    { color: secondaryTextColor },
-                                ]}
-                            >
-                                Cancel
-                            </Text>
-                        </Pressable>
-                    </View>
-                </>
-            )}
-
-            {loading && (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#2362FF" />
-                    <Text
-                        style={{
-                            marginTop: 8,
-                            fontSize: 14,
-                            color: subtitleColor,
-                        }}
-                    >
-                        {processingStatus || 'Processing...'}
-                    </Text>
-                </View>
-            )}
-
-            {result && !loading && (
-                <View style={{ marginTop: 16 }}>
-                    <Text style={[styles.h, { color: titleColor }]}>
-                        Detected Items ({result.items?.length || 0})
-                    </Text>
-                    {result.items?.length ? (
-                        <>
-                            {result.items.map((it: any, i: number) => (
-                                <View
-                                    key={i}
-                                    style={[
-                                        styles.itemRow,
-                                        { borderColor: itemBorderColor },
-                                    ]}
-                                >
-                                    <View style={{ flex: 1 }}>
-                                        <Text
-                                            style={{
-                                                fontWeight: '600',
-                                                fontSize: 15,
-                                                color: itemTextColor,
-                                            }}
-                                        >
-                                            {it.matched?.name ||
-                                                it.name ||
-                                                it.raw ||
-                                                'Unknown Item'}
-                                        </Text>
-                                        {it.matched?.brand && (
-                                            <Text
-                                                style={{
-                                                    fontSize: 13,
-                                                    color: subtitleColor,
-                                                    marginTop: 2,
-                                                }}
-                                            >
-                                                {it.matched.brand}
-                                            </Text>
-                                        )}
-                                    </View>
-                                    <Text
-                                        style={{
-                                            width: 50,
-                                            textAlign: 'right',
-                                            fontWeight: '600',
-                                            fontSize: 15,
-                                            color: itemTextColor,
-                                        }}
-                                    >
-                                        × {it.qty || 1}
-                                    </Text>
-                                </View>
-                            ))}
-                            <Pressable
-                                onPress={addAll}
-                                style={[
-                                    styles.card,
-                                    { marginTop: 16, backgroundColor: cardBg },
-                                ]}
-                            >
-                                <Text style={styles.btnText}>
-                                    Add All to Pantry ({result.items.length})
-                                </Text>
-                            </Pressable>
-                        </>
-                    ) : (
-                        <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text
-                                style={{
-                                    color: subtitleColor,
-                                    fontStyle: 'italic',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                No items detected in receipt.{'\n'}Try retaking
-                                with better lighting.
-                            </Text>
+                ) : (
+                    <>
+                        <Image
+                            source={{ uri }}
+                            style={styles.receiptImage}
+                            resizeMode="contain"
+                        />
+                        <View style={styles.buttonRow}>
                             <Pressable
                                 onPress={pick}
                                 style={[
                                     styles.card,
                                     styles.secondaryBtn,
+                                    styles.halfButton,
                                     {
-                                        marginTop: 12,
-                                        width: '100%',
                                         backgroundColor: secondaryBg,
                                         borderColor: secondaryBorder,
                                     },
                                 ]}
+                                disabled={loading}
                             >
                                 <Text
                                     style={[
@@ -394,14 +248,154 @@ export default function ReceiptScan() {
                                         { color: secondaryTextColor },
                                     ]}
                                 >
-                                    Retake Photo
+                                    Retake
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={submit}
+                                style={[
+                                    styles.card,
+                                    styles.halfButton,
+                                    { backgroundColor: cardBg },
+                                    loading && { opacity: 0.6 },
+                                ]}
+                                disabled={loading}
+                            >
+                                <Text style={styles.btnText}>Upload & Parse</Text>
+                            </Pressable>
+                        </View>
+
+                        {/* Cancel button */}
+                        <View style={styles.centerButton}>
+                            <Pressable
+                                onPress={() => {
+                                    resetState();
+                                    router.replace('/(tabs)/pantry');
+                                }}
+                                style={[
+                                    styles.card,
+                                    styles.secondaryBtn,
+                                    styles.cancelButton,
+                                    {
+                                        backgroundColor: secondaryBg,
+                                        borderColor: secondaryBorder,
+                                    },
+                                ]}
+                                disabled={loading}
+                            >
+                                <Text
+                                    style={[
+                                        styles.btnText,
+                                        styles.secondaryText,
+                                        { color: secondaryTextColor },
+                                    ]}
+                                >
+                                    Cancel
                                 </Text>
                             </Pressable>
                         </View>
-                    )}
-                </View>
-            )}
-        </ScrollView>
+                    </>
+                )}
+
+                {loading && (
+                    <View style={styles.center}>
+                        <ActivityIndicator size="large" color="#2362FF" />
+                        <Text
+                            style={[styles.statusText, { color: subtitleColor }]}
+                        >
+                            {processingStatus || 'Processing...'}
+                        </Text>
+                    </View>
+                )}
+
+                {result && !loading && (
+                    <View style={styles.resultsContainer}>
+                        <Text style={[styles.h, { color: titleColor }]}>
+                            Detected Items ({result.items?.length || 0})
+                        </Text>
+                        {result.items?.length ? (
+                            <>
+                                {result.items.map((it: any, i: number) => (
+                                    <View
+                                        key={i}
+                                        style={[
+                                            styles.itemRow,
+                                            { borderColor: itemBorderColor },
+                                        ]}
+                                    >
+                                        <View style={{ flex: 1 }}>
+                                            <Text
+                                                style={[styles.itemName, { color: itemTextColor }]}
+                                            >
+                                                {it.matched?.name ||
+                                                    it.name ||
+                                                    it.raw ||
+                                                    'Unknown Item'}
+                                            </Text>
+                                            {it.matched?.brand && (
+                                                <Text
+                                                    style={[styles.itemBrand, { color: subtitleColor }]}
+                                                >
+                                                    {it.matched.brand}
+                                                </Text>
+                                            )}
+                                        </View>
+                                        <Text
+                                            style={[styles.itemQty, { color: itemTextColor }]}
+                                        >
+                                            × {it.qty || 1}
+                                        </Text>
+                                    </View>
+                                ))}
+                                <Pressable
+                                    onPress={addAll}
+                                    style={[
+                                        styles.card,
+                                        styles.addAllButton,
+                                        { backgroundColor: cardBg },
+                                    ]}
+                                >
+                                    <Ionicons name="add-circle" size={20} color="white" style={{ marginRight: 6 }} />
+                                    <Text style={styles.btnText}>
+                                        Add All to Pantry ({result.items.length})
+                                    </Text>
+                                </Pressable>
+                            </>
+                        ) : (
+                            <View style={styles.noItemsContainer}>
+                                <Ionicons name="alert-circle-outline" size={48} color={subtitleColor} />
+                                <Text style={[styles.noItemsText, { color: subtitleColor }]}>
+                                    No items detected in receipt.{'\n'}Try retaking with better lighting.
+                                </Text>
+                                <Pressable
+                                    onPress={pick}
+                                    style={[
+                                        styles.card,
+                                        styles.secondaryBtn,
+                                        {
+                                            marginTop: 12,
+                                            width: '100%',
+                                            backgroundColor: secondaryBg,
+                                            borderColor: secondaryBorder,
+                                        },
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.btnText,
+                                            styles.secondaryText,
+                                            { color: secondaryTextColor },
+                                        ]}
+                                    >
+                                        Retake Photo
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+                )}
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -409,10 +403,28 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    title: {
+    header: {
+        height: 52,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#E5E7EB',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 8,
+        fontWeight: '800',
+    },
+    scrollContent: {
+        padding: 16,
+        paddingBottom: 32,
     },
     card: {
         height: 56,
@@ -420,6 +432,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2362FF',
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'row',
         marginTop: 12,
     },
     secondaryBtn: {
@@ -435,11 +448,33 @@ const styles = StyleSheet.create({
     secondaryText: {
         color: '#333333',
     },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 12,
+    },
+    halfButton: {
+        flex: 1,
+    },
+    centerButton: {
+        alignItems: 'center',
+    },
+    cancelButton: {
+        marginTop: 12,
+        width: '60%',
+    },
     center: {
         marginTop: 24,
         gap: 8,
         alignItems: 'center',
         padding: 20,
+    },
+    statusText: {
+        marginTop: 8,
+        fontSize: 14,
+    },
+    resultsContainer: {
+        marginTop: 16,
     },
     h: {
         fontSize: 18,
@@ -452,8 +487,34 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 8,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: '#DDDDDD',
         gap: 12,
+    },
+    itemName: {
+        fontWeight: '600',
+        fontSize: 15,
+    },
+    itemBrand: {
+        fontSize: 13,
+        marginTop: 2,
+    },
+    itemQty: {
+        width: 50,
+        textAlign: 'right',
+        fontWeight: '600',
+        fontSize: 15,
+    },
+    addAllButton: {
+        marginTop: 16,
+    },
+    noItemsContainer: {
+        padding: 20,
+        alignItems: 'center',
+        gap: 12,
+    },
+    noItemsText: {
+        fontStyle: 'italic',
+        textAlign: 'center',
+        lineHeight: 22,
     },
     helpText: {
         fontSize: 14,
@@ -461,5 +522,11 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         padding: 16,
         borderRadius: 12,
+    },
+    receiptImage: {
+        width: '100%',
+        height: 320,
+        borderRadius: 12,
+        marginBottom: 12,
     },
 });

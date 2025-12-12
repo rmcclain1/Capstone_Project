@@ -19,27 +19,46 @@ function ThemedStack() {
 
         let isMounted = true;
 
-        (async () => {
-            try {
-                const token = await registerForPushNotificationsAsync();
-                if (token && isMounted) {
-                    console.log('[Notifications] Registering token with backend...');
-                    await registerPushToken(token);
-                    console.log('[Notifications] Token registered successfully');
+        const registerWithRetry = async (maxRetries = 3) => {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const token = await registerForPushNotificationsAsync();
+                    
+                    if (token && isMounted) {
+                        console.log('[Notifications] Registering token with backend...');
+                        await registerPushToken(token);
+                        console.log('[Notifications] Token registered successfully');
+                        return true; // Success
+                    } else if (!token) {
+                        console.log('[Notifications] No token received (likely permission denied)');
+                        return false; // Don't retry if user denied permission
+                    }
+                } catch (error) {
+                    console.error(`[Notifications] Registration attempt ${attempt + 1} failed:`, error);
+                    
+                    if (attempt < maxRetries - 1) {
+                        // Exponential backoff: 2s, 4s, 8s
+                        const delay = 2000 * Math.pow(2, attempt);
+                        console.log(`[Notifications] Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
                 }
-            } catch (error) {
-                console.error('[Notifications] Registration failed:', error);
             }
-        })();
+            
+            console.error('[Notifications] Failed to register after all retries');
+            return false;
+        };
+
+        registerWithRetry();
 
         return () => {
             isMounted = false;
         };
     }, [user]);
 
-    // Handle notification taps
+    // Handle notification taps (background/killed app)
     useEffect(() => {
-        const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        const tapSub = Notifications.addNotificationResponseReceivedListener((response) => {
             const data = response.notification.request.content.data as any;
             if (data?.screen === 'pantry') {
                 router.push('/(tabs)/pantry');
@@ -50,7 +69,18 @@ function ThemedStack() {
             }
         });
 
-        return () => sub.remove();
+        return () => tapSub.remove();
+    }, []);
+
+    // Handle notifications received while app is in foreground
+    useEffect(() => {
+        const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
+            console.log('[Notifications] Received while app open:', notification.request.content);
+            // Notification will be shown automatically due to setNotificationHandler
+            // You could optionally refresh notification list here if needed
+        });
+
+        return () => receivedSub.remove();
     }, []);
 
     return (
@@ -69,11 +99,7 @@ function ThemedStack() {
                 {/* Standalone screens */}
                 <Stack.Screen name="login" />
                 <Stack.Screen name="auth/reset-password" />
-                <Stack.Screen name="notifications" />
                 <Stack.Screen name="profile" />
-                <Stack.Screen name="manual-entry" />
-                <Stack.Screen name="organization" />
-                <Stack.Screen name="modal" />
                 <Stack.Screen name="recalls/[id]" />
                 <Stack.Screen name="notifications/[id]" />
             </Stack>
