@@ -303,67 +303,70 @@ class Pantry < ApplicationRecord
   end
 
     # Check new items against FDA recalls (name / manufacturer) and notify
-  def check_for_recall_matches
-    recipient = notification_owner
-    return unless recipient
+def check_for_recall_matches
+  recipient = notification_owner
+  return unless recipient
 
-    # Build search terms from item name + manufacturer
-    terms = []
-    terms << item_name.to_s.strip if item_name.present?
-    terms << manufacturer.to_s.strip if respond_to?(:manufacturer) && manufacturer.present?
-    terms = terms.map { |t| t.downcase }.uniq.reject(&:blank?)
-    return if terms.empty?
+  # Build search terms from item name + manufacturer
+  terms = []
+  terms << item_name.to_s.strip if item_name.present?
+  terms << manufacturer.to_s.strip if respond_to?(:manufacturer) && manufacturer.present?
+  terms = terms.map { |t| t.downcase }.uniq.reject(&:blank?)
+  return if terms.empty?
 
-    # Build query: any event whose title, product_description, or recalling_firm
-    # contains ANY of the terms (case-insensitive)
-    query = FoodEvent.none
+  # Build query using actual FoodEvent columns
+  query = FoodEvent.none
 
-    terms.each do |term|
-      safe_term = ActiveRecord::Base.sanitize_sql_like(term)
-      pattern   = "%#{safe_term}%"
+  terms.each do |term|
+    safe_term = ActiveRecord::Base.sanitize_sql_like(term)
+    pattern   = "%#{safe_term}%"
 
-      scope = FoodEvent.where(
-        "food_events.title ILIKE :pattern
-         OR food_events.product_description ILIKE :pattern
-         OR food_events.recalling_firm ILIKE :pattern",
-        pattern: pattern
-      )
+    scope = FoodEvent.where(
+      "food_events.product_description ILIKE :pattern
+       OR food_events.recalling_firm ILIKE :pattern
+       OR food_events.reason_for_recall ILIKE :pattern",
+      pattern: pattern
+    )
 
-      query = query.or(scope)
-    end
+    query = query.or(scope)
+  end
 
-    matches = query.limit(5)
+  matches = query.limit(5)
 
-    matches.each do |event|
-      # Avoid duplicate notifications for the same pantry + event
-      already_exists = Notification
-        .where(
-          user: recipient,
-          pantry: self,
-          notification_type: Notification::TYPES[:custom]
-        )
-        .where("metadata ->> 'food_event_id' = ?", event.id.to_s)
-        .exists?
-
-      next if already_exists
-
-      Notification.create!(
+  matches.each do |event|
+    # Avoid duplicate notifications for the same pantry + event
+    already_exists = Notification
+      .where(
         user: recipient,
         pantry: self,
-        notification_type: Notification::TYPES[:custom], # TS already knows "custom"
-        title: "Possible recall: #{event.title.presence || item_name}",
-        body: "Your item '#{item_name}' may match an FDA recall from #{event.recalling_firm}. Check details to confirm if your product is affected.",
-        metadata: {
-          source: "recall_match",
-          food_event_id: event.id,
-          recall_number: event.event_id,
-          product_description: event.product_description,
-          recalling_firm: event.recalling_firm,
-          status: event.status
-        }
+        notification_type: Notification::TYPES[:custom]
       )
-    end
-  rescue => e
-    Rails.logger.error "Recall match notification failed for pantry #{id}: #{e.class} #{e.message}"
+      .where("metadata ->> 'food_event_id' = ?", event.id.to_s)
+      .exists?
+
+    next if already_exists
+
+    # Use product_description as the title
+    title_text = event.product_description.presence || item_name
+    title_text = title_text.truncate(100) if title_text.length > 100
+
+    Notification.create!(
+      user: recipient,
+      pantry: self,
+      notification_type: Notification::TYPES[:custom],
+      title: "Possible recall: #{title_text}",
+      body: "Your item '#{item_name}' may match an FDA recall from #{event.recalling_firm}. Check details to confirm if your product is affected.",
+      metadata: {
+        source: "recall_match",
+        food_event_id: event.id,
+        recall_number: event.recall_number,
+        product_description: event.product_description,
+        recalling_firm: event.recalling_firm,
+        status: event.status
+      }
+    )
   end
-end 
+rescue => e
+  Rails.logger.error "Recall match notification failed for pantry #{id}: #{e.class} #{e.message}"
+end
+end

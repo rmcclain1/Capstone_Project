@@ -21,22 +21,23 @@ module Api
         )
         rec.image.attach(params[:image])
 
-        # For now, process synchronously with error handling
+        # FIXED: Use proper ActiveStorage API with blob.open
         begin
-          path  = ActiveStorage::Blob.service.send(:path_for, rec.image.blob.key)
-          items = ReceiptParser.extract_items(path, content_type)
+          rec.image.blob.open do |file|
+            items = ReceiptParser.extract_items(file.path, content_type)
 
-          if items.empty?
-            rec.update!(status: 'done', items: [])
-          else
-            rec.update!(items: items, status: 'done')
+            if items.empty?
+              rec.update!(status: 'done', items: [])
+            else
+              rec.update!(items: items, status: 'done')
+            end
           end
         rescue => e
           Rails.logger.error "Receipt processing failed: #{e.message}"
           rec.update!(status: 'failed')
           return render json: { 
             error: 'Failed to process receipt',
-            details: e.message 
+            message: 'Please try again later'
           }, status: :unprocessable_entity
         end
 

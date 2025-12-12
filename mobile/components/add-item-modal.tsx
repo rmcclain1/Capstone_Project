@@ -187,38 +187,72 @@ export default function AddItemModal({ visible, onClose, onSubmit }: Props) {
 
                             {/* Expiration Date with Clickable Calendar Icon */}
                             <Text style={[styles.label, { marginTop: 10 }]}>Expiration Date</Text>
-                            <Pressable style={styles.inputWithIcon} onPress={openDatePicker}>
-                                <TextInput
-                                    placeholder="MM/DD/YYYY"
-                                    placeholderTextColor={placeholder}
-                                    style={[styles.input, { marginBottom: 0, flex: 1, borderWidth: 0, backgroundColor: 'transparent' }]}
-                                    value={expiresAt}
-                                    onChangeText={setExpiresAt}
-                                    keyboardType="numbers-and-punctuation"
-                                    autoCapitalize="none"
-                                    editable={false}
-                                    pointerEvents="none"
-                                />
-                                <Pressable onPress={openDatePicker} hitSlop={12}>
-                                    <Ionicons name="calendar-outline" size={20} color={theme.primary} />
-                                </Pressable>
-                            </Pressable>
-
-                            {/* Date Picker */}
-                            {showDatePicker && (
-                                <>
-                                    <DateTimePicker
-                                        value={selectedDate || new Date()}
-                                        mode="date"
-                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                        onChange={handleDateChange}
-                                        minimumDate={new Date()}
+                            {Platform.OS === 'web' ? (
+                                <View style={styles.inputWithIcon}>
+                                    <input
+                                        type="date"
+                                        value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                                        onChange={(e: any) => {
+                                            const dateValue = e.target.value;
+                                            if (dateValue) {
+                                                const newDate = new Date(dateValue);
+                                                setSelectedDate(newDate);
+                                                setExpiresAt(formatDate(newDate));
+                                            } else {
+                                                setSelectedDate(undefined);
+                                                setExpiresAt('');
+                                            }
+                                        }}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        style={{
+                                            flex: 1,
+                                            height: 44,
+                                            border: 'none',
+                                            backgroundColor: 'transparent',
+                                            color: theme.text,
+                                            fontSize: 15,
+                                            outline: 'none',
+                                            cursor: 'pointer',
+                                        }}
                                     />
-                                    {/* iOS needs a Done button */}
-                                    {Platform.OS === 'ios' && (
-                                        <Pressable style={styles.doneButton} onPress={closeDatePicker}>
-                                            <Text style={styles.doneButtonText}>Done</Text>
+                                    <Ionicons name="calendar-outline" size={20} color={theme.primary} style={{ pointerEvents: 'none' }} />
+                                </View>
+                            ) : (
+                                <>
+                                    <Pressable style={styles.inputWithIcon} onPress={openDatePicker}>
+                                        <TextInput
+                                            placeholder="MM/DD/YYYY"
+                                            placeholderTextColor={placeholder}
+                                            style={[styles.input, { marginBottom: 0, flex: 1, borderWidth: 0, backgroundColor: 'transparent' }]}
+                                            value={expiresAt}
+                                            onChangeText={setExpiresAt}
+                                            keyboardType="numbers-and-punctuation"
+                                            autoCapitalize="none"
+                                            editable={false}
+                                            pointerEvents="none"
+                                        />
+                                        <Pressable onPress={openDatePicker} hitSlop={12}>
+                                            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
                                         </Pressable>
+                                    </Pressable>
+
+                                    {/* Date Picker */}
+                                    {showDatePicker && (
+                                        <>
+                                            <DateTimePicker
+                                                value={selectedDate || new Date()}
+                                                mode="date"
+                                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                                onChange={handleDateChange}
+                                                minimumDate={new Date()}
+                                            />
+                                            {/* iOS needs a Done button */}
+                                            {Platform.OS === 'ios' && (
+                                                <Pressable style={styles.doneButton} onPress={closeDatePicker}>
+                                                    <Text style={styles.doneButtonText}>Done</Text>
+                                                </Pressable>
+                                            )}
+                                        </>
                                     )}
                                 </>
                             )}

@@ -1,4 +1,4 @@
-# RecallBackend/app/controllers/api/v1/ai_controller.rb
+# app/controllers/api/v1/ai_controller.rb
 require "net/http"
 require "uri"
 require "json"
@@ -13,7 +13,6 @@ module Api
       def chat
         # Support body shapes: { messages: [...] } or { ai: { messages: [...] } }
         messages = params[:messages].presence || params.dig(:ai, :messages).presence || []
-        user_id  = params[:user_id]
 
         pantry_names = []
         begin
@@ -31,7 +30,7 @@ module Api
         end
 
         system_prompt = <<~PROMPT
-          You are Recall App's AI assistant. Be concise and accurate.
+          You are Consume Safe's AI assistant. Be concise and accurate.
           You can answer questions about FDA food recalls, conceptually check a user's pantry items,
           and suggest safe alternatives and simple recipes using pantry items.
           If you are not sure, ask a short follow-up question.
@@ -39,7 +38,7 @@ module Api
           If the user asks about their pantry, they might have pantries named: #{pantry_names.join(", ")}.
         PROMPT
 
-        # --- Provider config ---
+        # Provider config
         openai_model = ENV.fetch("OPENAI_MODEL", "gpt-4o-mini")
         openai_key   = ENV["OPENAI_API_KEY"]
         if openai_key.blank?
@@ -72,18 +71,18 @@ module Api
           if code == 429
             Rails.logger.warn("AI quota/rate limit: #{resp.body}")
             return render json: {
-              reply: "I’m currently at capacity. Please try again in a moment."
+              reply: "I'm currently at capacity. Please try again in a moment."
             }
           elsif code >= 400
             Rails.logger.error("AI provider error #{code}: #{resp.body}")
             return render json: {
-              reply: "I couldn’t reach the AI provider just now. Try again shortly."
+              reply: "I couldn't reach the AI provider just now. Try again shortly."
             }
           end
 
           body  = JSON.parse(resp.body) rescue {}
           reply = body.dig("choices", 0, "message", "content").to_s
-          reply = "Sorry, I don’t have an answer right now." if reply.blank?
+          reply = "Sorry, I don't have an answer right now." if reply.blank?
           render json: { reply: reply }
 
         rescue => e

@@ -181,30 +181,29 @@ class Api::V1::PantriesController < ApplicationController
   private
 
   def build_pantry_query
-  # At this point authorize_request should have run,
-  # so current_user should be present.
-  raise ActiveRecord::RecordNotFound, "User not authorized" unless current_user
+    # At this point authorize_request should have run, so current_user should be present
+    raise ActiveRecord::RecordNotFound, "User not authorized" unless current_user
 
-  # Organization pantry
-  if params[:organization_id].present?
-    organization = current_user.organizations.find(params[:organization_id])
-    return organization.pantries.includes(:added_by_user)
+    # Organization pantry
+    if params[:organization_id].present?
+      organization = current_user.organizations.find(params[:organization_id])
+      return organization.pantries.includes(:added_by_user)
+    end
+
+    # Personal pantry (specific user) – only allow current_user's own ID
+    if params[:user_id].present?
+      user_id = params[:user_id].to_i
+
+      # If they ask for their own pantry, return that
+      # If they ask for someone else, give nothing
+      return current_user.pantries.where(organization_id: nil) if user_id == current_user.id
+
+      return Pantry.none
+    end
+
+    # Default: current user's personal pantry
+    current_user.pantries.where(organization_id: nil)
   end
-
-  # Personal pantry (specific user) – only allow current_user's own ID
-  if params[:user_id].present?
-    user_id = params[:user_id].to_i
-
-    # If they ask for their own pantry, return that;
-    # if they ask for someone else, give nothing (or you could raise 403).
-    return current_user.pantries.where(organization_id: nil) if user_id == current_user.id
-
-    return Pantry.none
-  end
-
-  # Default: current user's personal pantry
-  current_user.pantries.where(organization_id: nil)
-end
 
   def set_pantry
     @pantry = Pantry.find(params[:id])
@@ -214,7 +213,7 @@ end
     # Personal pantry item
     if @pantry.personal_item?
       unless @pantry.user_id == current_user&.id
-        render json: { error: 'Not authorized' }, status: :forbidden
+        return render json: { error: 'Not authorized' }, status: :forbidden
       end
       return
     end
@@ -224,7 +223,7 @@ end
       action = action_name == 'destroy' ? :can_delete_items : :can_edit_items
 
       unless current_user.can_in_organization?(@pantry.organization, action)
-        render json: { error: 'Not authorized' }, status: :forbidden
+        return render json: { error: 'Not authorized' }, status: :forbidden
       end
     end
   end

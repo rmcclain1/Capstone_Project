@@ -49,6 +49,9 @@ gem "thruster", require: false
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS)
 gem "rack-cors"
 
+# Pagination
+gem 'kaminari'
+
 group :development, :test do
   # Debugger
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -65,11 +68,6 @@ group :development, :test do
   # OCR / Receipts
   gem "googleauth", "~> 1.9"
   
-
   #apple login
   gem "apple_id"
-
-  gem 'kaminari'
-  
-
 end

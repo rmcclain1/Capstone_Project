@@ -17,6 +17,7 @@ import {
     Alert,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/app/context/auth_context';
 import { useTheme } from '@/constants/theme_provider';
 
@@ -108,7 +109,17 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
         setAllergies({ ...blank, ...(initial?.allergies ?? {}) });
     }, [visible, initial, blank]);
 
-    const isValidImageUrl = (u?: string) => !!u && /^https?:\/\/.+/i.test(u.trim());
+    const isValidImageUrl = (u?: string) => {
+
+        if (!u) return false;
+
+        const trimmed = u.trim();
+
+        // Allow http/https URLs AND local file URIs (file://, ph://, content://, etc.)
+
+        return /^(https?:\/\/.+|file:\/\/.+|ph:\/\/.+|content:\/\/.+)$/i.test(trimmed);
+
+    };
 
     // live preview as user types a URL
     useEffect(() => {
@@ -123,6 +134,35 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
             if (key === 'Other' && !next['Other']) setOtherAllergy('');
             return next;
         });
+    };
+
+    const handlePickImage = async () => {
+        if (Platform.OS !== 'web') {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please allow access to your photos to upload a profile picture.');
+                return;
+            }
+        }
+
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const selectedImage = result.assets[0];
+                // 
+                setProfileUrl(selectedImage.uri);
+                setLivePreview(selectedImage.uri);
+            }
+        } catch (error) {
+            console.error('[EditProfileModal] Image picker error:', error);
+            Alert.alert('Error', 'Failed to pick image. Please try again.');
+        }
     };
 
     const save = () => {
@@ -180,18 +220,28 @@ export default function EditProfileModal({ visible, onClose, onSave, initial }: 
                                         </View>
                                     )}
                                 </View>
+                                {Platform.OS !== 'web' && (
+                                    <Pressable onPress={handlePickImage} style={styles.uploadBtn}>
+                                        <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
+                                        <Text style={styles.uploadBtnText}>Upload Photo</Text>
+                                    </Pressable>
+                                )}
                             </View>
 
                             <Text style={styles.section}>Personal Information</Text>
 
-                            <Label text="Profile Picture URL" />
-                            <Input
-                                value={profileUrl}
-                                onChangeText={setProfileUrl}
-                                placeholder="https://example.com/me.jpg"
-                                keyboardType="url"
-                                autoCapitalize="none"
-                            />
+                            {Platform.OS === 'web' && (
+                                <>
+                                    <Label text="Profile Picture URL" />
+                                    <Input
+                                        value={profileUrl}
+                                        onChangeText={setProfileUrl}
+                                        placeholder="https://example.com/me.jpg"
+                                        keyboardType="url"
+                                        autoCapitalize="none"
+                                    />
+                                </>
+                            )}
 
                             <Label text="Name" />
                             <Input value={name} onChangeText={setName} placeholder="Your name" />
@@ -318,6 +368,19 @@ const makeStyles = (t: any) =>
 
         avatarWrap: { width: 96, height: 96, borderRadius: 999, position: 'relative' },
         avatar: { width: '100%', height: '100%', borderRadius: 999 },
+
+        uploadBtn: {
+            marginTop: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 10,
+            backgroundColor: t.inputBg,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        uploadBtnText: { color: t.primary, fontWeight: '600', fontSize: 14 },
 
         section: { marginTop: 14, marginBottom: 6, fontWeight: '800', color: t.text },
 

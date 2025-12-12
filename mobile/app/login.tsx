@@ -103,7 +103,7 @@ export default function LoginScreen() {
             >
                 <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                     <View style={{ height: 24 }} />
-                    <Text style={styles.appName}>Recall App</Text>
+                    <Text style={styles.appName}>Consume Safe</Text>
                     <View style={{ height: 24 }} />
                     <Text style={styles.h2}>Welcome back</Text>
                     <Text style={styles.sub}>Log in to continue</Text>

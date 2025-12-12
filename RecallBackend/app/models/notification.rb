@@ -3,7 +3,7 @@ class Notification < ApplicationRecord
   belongs_to :user
   belongs_to :pantry, optional: true
 
-  after_create :send_push_notification, if: -> { user.push_notifications_enabled? }
+  after_create :send_push_notification, if: -> { user&.expo_push_token.present? }
 
   # Scopes
   scope :unread, -> { where(read: false) }

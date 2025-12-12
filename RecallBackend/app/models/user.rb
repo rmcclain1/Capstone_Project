@@ -27,6 +27,7 @@ class User < ApplicationRecord
 
   # Core validations
   validates :firebase_uid, presence: true, uniqueness: true
+  validates :apple_uid, uniqueness: true, allow_nil: true
   
   # ========================================
   # FIX: Add allow_blank to prevent empty string validation errors
@@ -34,20 +35,20 @@ class User < ApplicationRecord
   validates :email, 
     uniqueness: { case_sensitive: false }, 
     allow_nil: true, 
-    allow_blank: true  # ← ADDED THIS
+    allow_blank: true
     
   validates :username, 
     uniqueness: { case_sensitive: false }, 
     allow_nil: true, 
-    allow_blank: true  # ← ADDED THIS
+    allow_blank: true
     
   validates :expo_push_token, 
     uniqueness: true, 
     allow_nil: true, 
-    allow_blank: true  # ← ADDED THIS
+    allow_blank: true
 
   before_validation :normalize_email
-  before_save :normalize_empty_strings  # ← ADDED THIS
+  before_save :normalize_empty_strings
 
   # ============================================================================
   # Organization Methods
@@ -111,8 +112,18 @@ class User < ApplicationRecord
   # ============================================================================
 
   def push_notifications_enabled?
-    push_notifications_enabled && expo_push_token.present?
+  # Check if column exists first
+  return false unless respond_to?(:push_notifications_enabled)
+  
+  # Check both the column value and that token exists
+  begin
+    self[:push_notifications_enabled] == true && expo_push_token.present?
+  rescue
+    # If column doesn't exist, just check for token
+    expo_push_token.present?
   end
+  end
+
 
   def unread_notifications_count
     notifications.unread.count
